@@ -73,10 +73,10 @@ export default function SpaceBackground({ opacity = 1 }: { opacity?: number }) {
           { x1: 1200, y1: 100, x2: 1400, y2: 220,  delay: '20s',  dur: '3.8s' },
         ]).map((ss, i) => (
           <line key={`ss${i}`} x1={ss.x1} y1={ss.y1} x2={ss.x1} y2={ss.y1}
-            stroke="white" strokeWidth={1.5} strokeLinecap="round" opacity={0}>
+            stroke="white" strokeWidth={0.8} strokeLinecap="round" opacity={0}>
             <animate attributeName="x2" values={`${ss.x1};${ss.x2}`} dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
             <animate attributeName="y2" values={`${ss.y1};${ss.y2}`} dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.6;0.6;0" keyTimes="0;0.05;0.7;1" dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.22;0.12;0" keyTimes="0;0.06;0.4;1" dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
           </line>
         ))}
       </svg>
