@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Lock, ArrowRight, Star, Zap, TrendingUp } from 'lucide-react';
+import FunnelDiagram from '@/components/FunnelDiagram';
 
 const SALES_PASSWORD = 'RevCore2025';
 
@@ -178,7 +179,6 @@ const softwareOptions = [
       'Trade-specific content & visuals',
       'Package & option showcasing',
       'E-signature collection',
-      'Works offline (no wifi needed)',
       'CRM integration',
       'Annual content refresh included',
     ],
@@ -447,6 +447,28 @@ function SalesDeck() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Section: Marketing Funnel ── */}
+      <section style={{ padding: '96px 0 80px', background: '#F5F5F5' }}>
+        <div className="container">
+          <div style={{ marginBottom: '2.5rem' }}>
+            <div className="section-tag">The System</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'end' }}>
+              <h2 style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+                fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em',
+              }}>
+                How the full<br />funnel works
+              </h2>
+              <p style={{ color: 'var(--color-gray)', lineHeight: '1.8' }}>
+                Every service connects into one system. Drag to explore, scroll to zoom. Use this during calls to walk your client through how their leads go from impression to appointment.
+              </p>
+            </div>
+          </div>
+          <FunnelDiagram />
         </div>
       </section>
 
