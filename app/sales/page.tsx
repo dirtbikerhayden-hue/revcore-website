@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Check, ChevronDown, ChevronUp, Lock, ArrowRight, Star, Zap, TrendingUp } from 'lucide-react';
 import FunnelDiagram from '@/components/FunnelDiagram';
 import SEOChecker from '@/components/SEOChecker';
@@ -366,6 +366,26 @@ function FeatureList({ items, accent, showAll = false }: { items: string[]; acce
 
 // ─── Main sales deck ──────────────────────────────────────────────────────────
 function SalesDeck() {
+  const revenueRef = useRef<HTMLSpanElement>(null);
+  const photoRef   = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (photoRef.current) {
+        photoRef.current.style.transform = `translateY(${y * 0.12}px)`;
+      }
+      if (revenueRef.current) {
+        const progress = Math.min(1, y / 300);
+        const brightness = 1.4 + progress * 1.4;
+        const saturate   = 1.2 + progress * 1.0;
+        revenueRef.current.style.filter = `brightness(${brightness}) saturate(${saturate})`;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <div style={{ background: '#F5F5F5', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
 
@@ -407,20 +427,27 @@ function SalesDeck() {
 
       {/* ── Hero ── */}
       <section style={{ background: '#0A0A0A', padding: '80px 0 100px', position: 'relative', overflow: 'hidden' }}>
-        {/* Hero photo with parallax-style overlay */}
-        <div style={{
-          position: 'absolute', inset: 0,
+        {/* Hero photo — parallax on scroll */}
+        <div ref={photoRef} style={{
+          position: 'absolute', inset: '-10% 0',
           backgroundImage: `url(${HERO_PHOTO_URL})`,
           backgroundSize: 'cover', backgroundPosition: 'center top',
-          opacity: 0.18,
+          opacity: 0.22, willChange: 'transform',
         }} />
-        {/* Dark gradient over photo */}
+        {/* Dark vignette */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(10,10,10,0.6) 0%, rgba(10,10,10,0.3) 50%, rgba(10,10,10,0.85) 100%)',
+          background: 'linear-gradient(to bottom, rgba(10,10,10,0.55) 0%, rgba(10,10,10,0.25) 50%, rgba(10,10,10,0.9) 100%)',
         }} />
         <SpaceBackground opacity={0.7} />
         <VideoBackground src={HERO_VIDEO_URL} opacity={0.05} />
+        {/* Grain overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 512 512\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'ns\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.68\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23ns)\'/%3E%3C/svg%3E")',
+          backgroundSize: '220px 220px', opacity: 0.10,
+          mixBlendMode: 'soft-light', pointerEvents: 'none',
+        }} />
         <div className="container" style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -431,17 +458,10 @@ function SalesDeck() {
             Complete Pricing Guide
             <span style={{ width: '24px', height: '2px', background: '#FE6462', display: 'block' }} />
           </div>
-          <h1 style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-            fontWeight: 800,
-            color: 'white',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.05,
-            marginBottom: '1.25rem',
-          }}>
-            Built to grow your<br />
-            <span style={{ color: '#FE6462' }}>revenue.</span> Not just your leads.
+          <h1 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: '1.25rem' }}>
+            <span className="sales-hero-line">Built to grow your</span><br />
+            <span ref={revenueRef} className="sales-hero-accent">revenue.</span>
+            <span className="sales-hero-line"> Not just your leads.</span>
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.45)', maxWidth: '560px', margin: '0 auto 2.5rem', lineHeight: '1.8', fontSize: '1.0625rem' }}>
             Everything from individual services to full revenue-partner engagements — plus our proprietary sales software built exclusively for home service contractors.
@@ -1017,6 +1037,33 @@ function SalesDeck() {
       </section>
 
       <style>{`
+        .sales-hero-line {
+          font-size: clamp(2.5rem, 6vw, 5rem);
+          color: transparent;
+          -webkit-text-stroke: 1.2px rgba(255,255,255,0.62);
+        }
+        .sales-hero-accent {
+          font-size: clamp(2.5rem, 6vw, 5rem);
+          background: linear-gradient(118deg,
+            rgba(13,3,5,0.9) 0%,
+            rgba(100,16,16,0.82) 28%,
+            rgba(210,38,38,0.72) 52%,
+            rgba(130,18,18,0.82) 72%,
+            rgba(26,4,6,0.9) 100%
+          );
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          background-size: 300% 100%;
+          filter: brightness(1.4) saturate(1.2);
+          will-change: filter;
+          animation: salesAccentShimmer 10s ease-in-out infinite;
+        }
+        @keyframes salesAccentShimmer {
+          0%   { background-position: 160% center; }
+          50%  { background-position: -60% center; }
+          100% { background-position: -60% center; }
+        }
         @media (max-width: 1024px) {
           div[style*="grid-template-columns: 280px 1fr 240px"] {
             grid-template-columns: 1fr !important;
