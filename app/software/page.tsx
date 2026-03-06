@@ -273,11 +273,12 @@ function SoftwareHero() {
   const { ref, inView } = useScrollReveal({ threshold: 0.15 });
 
   return (
-    <section ref={ref as React.Ref<HTMLElement>} style={{ paddingTop: '160px', paddingBottom: '100px', background: '#070b0f', position: 'relative', overflow: 'hidden' }}>
-      {/* Hero background image */}
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url(https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69ab0072c72818a840aca676.png)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.35 }} />
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,11,15,0.55) 0%, rgba(7,11,15,0.25) 50%, rgba(7,11,15,0.7) 100%)' }} />
-      <SpaceBackground opacity={0.22} />
+    <section ref={ref as React.Ref<HTMLElement>} style={{ paddingTop: '80px', background: '#070b0f' }}>
+      <div style={{ margin: '12px', borderRadius: '24px', overflow: 'hidden', position: 'relative', paddingTop: '80px', paddingBottom: '100px' }}>
+        {/* Hero background image */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url(https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69ab0072c72818a840aca676.png)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.15 }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,11,15,0.7) 0%, rgba(7,11,15,0.45) 50%, rgba(7,11,15,0.85) 100%)' }} />
+        <SpaceBackground opacity={0.22} />
       <div className="container" style={{ textAlign: 'center', maxWidth: '1000px', position: 'relative', zIndex: 1 }}>
         <div style={{ ...fadeUp(inView, 0) }}>
           <div style={{
@@ -324,6 +325,7 @@ function SoftwareHero() {
             Presentation Software ↓
           </a>
         </div>
+      </div>
       </div>
     </section>
   );
