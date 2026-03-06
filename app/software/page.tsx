@@ -271,17 +271,6 @@ function SoftwareCTA() {
 /* ─── Hero ───────────────────────────────────────────────────────────────── */
 function SoftwareHero() {
   const { ref, inView } = useScrollReveal({ threshold: 0.15 });
-  const titleRef = React.useRef<HTMLHeadingElement>(null);
-
-  React.useEffect(() => {
-    const onScroll = () => {
-      if (!titleRef.current) return;
-      const y = `${-window.scrollY * 0.28}px`;
-      titleRef.current.style.backgroundPositionY = y;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   return (
     <section ref={ref as React.Ref<HTMLElement>} style={{ paddingTop: '160px', paddingBottom: '100px', background: '#070b0f', position: 'relative', overflow: 'hidden' }}>
@@ -299,35 +288,15 @@ function SoftwareHero() {
             </span>
           </div>
         </div>
-        <div style={{ ...fadeUp(inView, 150), position: 'relative', marginBottom: '1.25rem' }}>
-          {/* Glow halo layer — blurred gradient gives luminous presence */}
-          <h1 aria-hidden style={{
-            position: 'absolute', inset: 0, margin: 0,
+        <div style={{ ...fadeUp(inView, 150), marginBottom: '1.25rem' }}>
+          <h1 style={{
             fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 800, lineHeight: 1.05,
-            letterSpacing: '-0.03em', whiteSpace: 'nowrap',
-            background: 'linear-gradient(110deg, #ffffff 0%, #b8caff 35%, #94D96B 65%, #ffffff 100%)',
+            letterSpacing: '-0.03em', margin: 0, whiteSpace: 'nowrap',
+            background: 'linear-gradient(110deg, #fff 0%, #fff 15%, #6B8EFE 38%, #94D96B 58%, #fff 82%, #fff 100%)',
+            backgroundSize: '250% 100%',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            filter: 'blur(18px)',
-            opacity: 0.55,
-            pointerEvents: 'none',
+            animation: 'gradientShift 5s ease-in-out infinite',
           }}>
-            Software that closes jobs.
-          </h1>
-          {/* Image-clip parallax layer on top */}
-          <h1
-            ref={titleRef}
-            style={{
-              fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 800, lineHeight: 1.05,
-              letterSpacing: '-0.03em', margin: 0, whiteSpace: 'nowrap',
-              backgroundImage: 'url(https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69a9d5c5b003fa5c4ac3d374.png)',
-              backgroundSize: 'cover',
-              backgroundPositionX: 'center',
-              backgroundPositionY: '0px',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-              filter: 'brightness(2.2) saturate(1.1)',
-              position: 'relative',
-            }}
-          >
             Software that closes jobs.
           </h1>
         </div>
@@ -367,6 +336,10 @@ export default function SoftwarePage() {
       <SoftwareCTA />
 
       <style>{`
+        @keyframes gradientShift {
+          0%, 100% { background-position: 100% center; }
+          50%       { background-position: 0% center; }
+        }
         @media (max-width: 768px) {
           div[style*="grid-template-columns: 1fr 1fr"] {
             grid-template-columns: 1fr !important;
