@@ -244,7 +244,7 @@ const TABS: TabCfg[] = [
   { id: 'dashboard', label: 'Dashboard', Icon: IconGrid },
   { id: 'quote', label: 'New Quote', Icon: IconPlus },
   { id: 'jobs', label: 'Jobs', Icon: IconList },
-  { id: 'followup', label: 'Follow-Ups', Icon: IconRefresh },
+  { id: 'followup', label: 'Follow-up', Icon: IconRefresh },
 ];
 
 export default function QuotingApp({ controlledTab }: { controlledTab?: Tab } = {}) {
@@ -268,7 +268,7 @@ export default function QuotingApp({ controlledTab }: { controlledTab?: Tab } = 
             }}
           >
             <t.Icon active={tab === t.id} />
-            <span style={{ fontSize: '0.5rem', fontWeight: tab === t.id ? 700 : 400, letterSpacing: '0.01em' }}>{t.label}</span>
+            <span style={{ fontSize: '0.5rem', fontWeight: tab === t.id ? 700 : 400, letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>{t.label}</span>
           </button>
         ))}
       </div>

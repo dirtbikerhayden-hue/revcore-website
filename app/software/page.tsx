@@ -167,10 +167,6 @@ function SoftwareDemoOverlay({ open, onClose, ipadSide, accent, steps, step, onS
             <button onClick={() => { if (step < steps.length - 1) { onStep(step + 1); handleActivity(); } }} disabled={step === steps.length - 1} style={{ width: '36px', height: '36px', borderRadius: '50%', background: step === steps.length - 1 ? 'rgba(255,255,255,0.04)' : `${accent}20`, border: `1px solid ${step === steps.length - 1 ? 'rgba(255,255,255,0.1)' : accent + '40'}`, color: step === steps.length - 1 ? 'rgba(255,255,255,0.18)' : accent, cursor: step === steps.length - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', fontSize: '1rem' }}>→</button>
           </div>
         </div>
-        {/* Autoplay progress bar */}
-        <div style={{ marginTop: '1.25rem', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '100px', overflow: 'hidden' }}>
-          <div key={`${step}-${activityTs}`} style={{ height: '100%', background: accent, borderRadius: '100px', animation: 'autoPlayProgress 5.5s linear forwards', transformOrigin: 'left' }} />
-        </div>
       </div>
     </div>
   );
@@ -221,7 +217,6 @@ function SoftwareDemoOverlay({ open, onClose, ipadSide, accent, steps, step, onS
         @keyframes demoStepIn { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
         @keyframes demoFadeUp { from { opacity:0; transform:translateY(-8px) } to { opacity:1; transform:translateY(0) } }
         @keyframes demoDot { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
-        @keyframes autoPlayProgress { from { width:0% } to { width:100% } }
       `}</style>
     </div>,
     document.body
