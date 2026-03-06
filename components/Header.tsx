@@ -28,6 +28,7 @@ const navLinks = [
   { label: 'Results', href: '/portfolio' },
   { label: 'About', href: '/about' },
   { label: 'Blog', href: '/blog' },
+  { label: 'Client Portal', href: '/portal' },
 ];
 
 export default function Header() {
