@@ -7,8 +7,8 @@ const PORTAL_PASSWORD = 'revcoreclient';
 const STORAGE_KEY = 'rcPortalAuth';
 
 // ─── Login Screen ───────────────────────────────────────────────────────────
-function LoginScreen({ onLogin }: { onLogin: (email: string) => void }) {
-  const [email, setEmail] = useState('');
+function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,12 +17,13 @@ function LoginScreen({ onLogin }: { onLogin: (email: string) => void }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!email.trim() || !email.includes('@')) { setError('Please enter a valid email address.'); return; }
+    if (!name.trim()) { setError('Please enter your name.'); return; }
     if (password !== PORTAL_PASSWORD) { setError('Incorrect password. Please try again.'); return; }
     setLoading(true);
+    const capitalized = name.trim().charAt(0).toUpperCase() + name.trim().slice(1);
     setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ email: email.trim(), ts: Date.now() }));
-      onLogin(email.trim());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: capitalized, ts: Date.now() }));
+      onLogin(capitalized);
     }, 700);
   };
 
@@ -46,12 +47,12 @@ function LoginScreen({ onLogin }: { onLogin: (email: string) => void }) {
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '0.4rem' }}>EMAIL ADDRESS</label>
+              <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '0.4rem' }}>YOUR NAME</label>
               <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Enter your name"
                 required
                 style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '0.85rem 1rem', color: '#fff', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
                 onFocus={e => e.target.style.borderColor = 'rgba(254,100,98,0.6)'}
@@ -108,10 +109,9 @@ function LoginScreen({ onLogin }: { onLogin: (email: string) => void }) {
 // ─── Dashboard ───────────────────────────────────────────────────────────────
 type Tab = 'home' | 'sales' | 'gmb' | 'resources' | 'support';
 
-function Dashboard({ email, onLogout }: { email: string; onLogout: () => void }) {
+function Dashboard({ name, onLogout }: { name: string; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const firstName = email.split('@')[0].split('.')[0];
-  const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  const displayName = name;
 
   return (
     <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff', paddingTop: '80px' }}>
@@ -124,7 +124,7 @@ function Dashboard({ email, onLogout }: { email: string; onLogout: () => void })
             <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Client Portal</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', display: 'none' }} className="portal-email-label">{email}</span>
+            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', display: 'none' }} className="portal-email-label">{name}</span>
             <button onClick={onLogout} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.55)', fontSize: '0.82rem', padding: '6px 14px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; }}>
@@ -170,43 +170,13 @@ function Dashboard({ email, onLogout }: { email: string; onLogout: () => void })
 
 // ─── Support Section ─────────────────────────────────────────────────────────
 function SupportSection() {
-  const [name, setName] = useState('');
-  const [issueType, setIssueType] = useState('Question');
-  const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !subject.trim() || !description.trim()) return;
-    setSubmitting(true);
-    const emailSubject = encodeURIComponent(`[Support] ${issueType}: ${subject}`);
-    const emailBody = encodeURIComponent(`Name: ${name}\nIssue Type: ${issueType}\nSubject: ${subject}\n\n--- Description ---\n${description}\n\n---\nSubmitted via RevCore Client Portal`);
-    setTimeout(() => {
-      window.location.href = `mailto:support@revcorehq.com?subject=${emailSubject}&body=${emailBody}`;
-      setSubmitted(true);
-      setSubmitting(false);
-    }, 500);
-  };
-
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://api.leadconnectorhq.com/js/form_embed.js';
+    script.src = 'https://link.msgsndr.com/js/form_embed.js';
     script.type = 'text/javascript';
     document.body.appendChild(script);
     return () => { try { document.body.removeChild(script); } catch {} };
   }, []);
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '10px', padding: '0.75rem 1rem', color: '#fff', fontSize: '0.88rem',
-    fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box',
-  };
-  const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.45)',
-    marginBottom: '0.4rem', letterSpacing: '0.06em', textTransform: 'uppercase',
-  };
 
   return (
     <div style={{ marginTop: '2.5rem' }}>
@@ -221,63 +191,27 @@ function SupportSection() {
         </div>
       </div>
 
-      {/* Ticket form */}
+      {/* GHL Ticket Form */}
       <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '1.75rem', marginBottom: '1.5rem' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.3rem', letterSpacing: '-0.01em' }}>Submit a Support Ticket</h3>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.84rem', margin: '0 0 1.5rem', lineHeight: 1.5 }}>Report a bug, request a change, or ask a question — we respond within a few hours during business hours.</p>
-
-        {submitted ? (
-          <div style={{ background: 'rgba(148,217,107,0.07)', border: '1px solid rgba(148,217,107,0.2)', borderRadius: '12px', padding: '2rem', textAlign: 'center' }}>
-            <div style={{ width: '48px', height: '48px', background: 'rgba(148,217,107,0.12)', border: '1px solid rgba(148,217,107,0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94D96B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-            </div>
-            <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem', color: '#94D96B' }}>Ticket Sent!</div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-              Your email client opened with your ticket details pre-filled. We'll reply to you at <strong style={{ color: 'rgba(255,255,255,0.75)' }}>support@revcorehq.com</strong>.
-            </div>
-            <button onClick={() => { setSubmitted(false); setName(''); setSubject(''); setDescription(''); setIssueType('Question'); }}
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '0.83rem', padding: '7px 18px', cursor: 'pointer', fontFamily: 'inherit' }}>
-              Submit another
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="portal-grid-2">
-              <div>
-                <label style={labelStyle}>Your Name *</label>
-                <input value={name} onChange={e => setName(e.target.value)} placeholder="John Smith" required style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>Issue Type *</label>
-                <select value={issueType} onChange={e => setIssueType(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                  <option value="Question">Question</option>
-                  <option value="Bug / Error">Bug / Error</option>
-                  <option value="Change Request">Change Request</option>
-                  <option value="Campaign Issue">Campaign Issue</option>
-                  <option value="Billing">Billing</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label style={labelStyle}>Subject *</label>
-              <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Brief summary of your issue or request" required style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Description *</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)}
-                placeholder="Describe the issue in detail. Include relevant dates, what you expected vs. what happened, or any steps to reproduce..."
-                required rows={5} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
-            </div>
-            <button type="submit" disabled={submitting || !name.trim() || !subject.trim() || !description.trim()}
-              style={{ alignSelf: 'flex-start', background: submitting ? 'rgba(254,100,98,0.5)' : '#FE6462', color: '#fff', border: 'none', borderRadius: '10px', padding: '0.75rem 1.75rem', fontSize: '0.9rem', fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '8px', transition: 'opacity 0.2s' }}>
-              {submitting
-                ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: 'spin 0.8s linear infinite' }}><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Opening email...</>
-                : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send Ticket</>
-              }
-            </button>
-          </form>
-        )}
+        <iframe
+          src="https://api.leadconnectorhq.com/widget/form/9epUb2dwOeBwrZkLja00"
+          style={{ width: '100%', height: '670px', border: 'none', borderRadius: '3px', display: 'block' }}
+          id="inline-9epUb2dwOeBwrZkLja00"
+          data-layout="{'id':'INLINE'}"
+          data-trigger-type="alwaysShow"
+          data-trigger-value=""
+          data-activation-type="alwaysActivated"
+          data-activation-value=""
+          data-deactivation-type="neverDeactivate"
+          data-deactivation-value=""
+          data-form-name="Support"
+          data-height="670"
+          data-layout-iframe-id="inline-9epUb2dwOeBwrZkLja00"
+          data-form-id="9epUb2dwOeBwrZkLja00"
+          title="Support"
+        />
       </div>
 
       {/* Book a support call */}
@@ -300,8 +234,6 @@ function SupportSection() {
           />
         </div>
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -907,27 +839,27 @@ function Resources() {
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function PortalPage() {
-  const [email, setEmail] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const { email: e } = JSON.parse(stored);
-        if (e) setEmail(e);
+        const { name: n } = JSON.parse(stored);
+        if (n) setName(n);
       }
     } catch {}
     setChecked(true);
   }, []);
 
-  const handleLogin = (e: string) => setEmail(e);
+  const handleLogin = (n: string) => setName(n);
   const handleLogout = () => {
     localStorage.removeItem(STORAGE_KEY);
-    setEmail(null);
+    setName(null);
   };
 
   if (!checked) return null;
-  if (!email) return <LoginScreen onLogin={handleLogin} />;
-  return <Dashboard email={email} onLogout={handleLogout} />;
+  if (!name) return <LoginScreen onLogin={handleLogin} />;
+  return <Dashboard name={name} onLogout={handleLogout} />;
 }
