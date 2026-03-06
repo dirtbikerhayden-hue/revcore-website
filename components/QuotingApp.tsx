@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Tab = 'dashboard' | 'quote' | 'jobs' | 'followup';
 
@@ -247,8 +247,9 @@ const TABS: TabCfg[] = [
   { id: 'followup', label: 'Follow-Ups', Icon: IconRefresh },
 ];
 
-export default function QuotingApp() {
-  const [tab, setTab] = useState<Tab>('jobs');
+export default function QuotingApp({ controlledTab }: { controlledTab?: Tab } = {}) {
+  const [tab, setTab] = useState<Tab>(controlledTab ?? 'jobs');
+  useEffect(() => { if (controlledTab) setTab(controlledTab); }, [controlledTab]);
   return (
     <div style={{ background: BG, fontFamily: '-apple-system, "DM Sans", sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <StatusBar center="RevCore Quoting" />

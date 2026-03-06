@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const ACCENT = '#6DBE7A';
 const BG = '#0b0e0d';
@@ -442,9 +442,17 @@ function renderSlide(idx: number) {
 }
 
 /* ─── Main ───────────────────────────────────────────────────────────────── */
-export default function PitchApp() {
+export default function PitchApp({ controlledSlide }: { controlledSlide?: number } = {}) {
   const [slide, setSlide] = useState(0);
   const [dir, setDir] = useState(1);
+  const isControlled = controlledSlide !== undefined;
+  useEffect(() => {
+    if (controlledSlide !== undefined) {
+      setDir(controlledSlide > slide ? 1 : -1);
+      setSlide(controlledSlide);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlledSlide]);
 
   const go = (idx: number) => { setDir(idx > slide ? 1 : -1); setSlide(idx); };
   const prev = () => slide > 0 && go(slide - 1);
@@ -458,8 +466,8 @@ export default function PitchApp() {
         </div>
       </div>
 
-      {/* Nav bar */}
-      <div style={{ background: 'rgba(11,14,13,0.97)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+      {/* Nav bar — hidden in controlled/demo mode */}
+      {!isControlled && <div style={{ background: 'rgba(11,14,13,0.97)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <button
           onClick={prev} disabled={slide === 0}
           style={{ width: '32px', height: '32px', borderRadius: '9px', background: slide === 0 ? 'rgba(255,255,255,0.02)' : SURFACE, border: `1px solid ${slide === 0 ? 'rgba(255,255,255,0.05)' : BORDER}`, color: slide === 0 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.65)', fontSize: '0.95rem', cursor: slide === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
@@ -478,7 +486,7 @@ export default function PitchApp() {
           onClick={next} disabled={slide === SLIDE_COUNT - 1}
           style={{ width: '32px', height: '32px', borderRadius: '9px', background: slide === SLIDE_COUNT - 1 ? 'rgba(255,255,255,0.02)' : `${ACCENT}25`, border: `1px solid ${slide === SLIDE_COUNT - 1 ? 'rgba(255,255,255,0.05)' : ACCENT + '40'}`, color: slide === SLIDE_COUNT - 1 ? 'rgba(255,255,255,0.15)' : ACCENT, fontSize: '0.95rem', cursor: slide === SLIDE_COUNT - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
         >›</button>
-      </div>
+      </div>}
 
       <style>{`
         @keyframes pitchSlideIn   { from { opacity:0; transform:translateX(18px);  } to { opacity:1; transform:translateX(0); } }
