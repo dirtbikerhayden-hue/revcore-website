@@ -36,7 +36,7 @@ const stages = [
   { emotion: 'EMOTION +\nCOMMITMENT',   touchpoint: 'QUALIFICATION',  color: YELLOW,
     items: ['Quiz funnel → highest conversion rate', 'Location · Budget · Scope · Interest'] },
   { emotion: 'COMMITMENT',               touchpoint: 'CTA',            color: YELLOW,
-    items: ['CTA: Contact form / Call now', 'Increase daily ad spend here'] },
+    items: ['CTA: Contact form / Call now'] },
   { emotion: 'COMMITMENT +\nEXCITEMENT',touchpoint: 'LEADS',          color: GREEN,
     items: ['Full name · Phone · Email', 'Home address · Scheduled timeslot'] },
   { emotion: 'EXCITEMENT +\nTRUST',      touchpoint: 'CONTACT',        color: GREEN,
@@ -207,57 +207,6 @@ export default function FunnelDiagram() {
           transformOrigin: '0 0', userSelect: 'none',
         }}>
 
-          {/* ── Space background: stars + shooting stars ── */}
-          <svg style={{ position: 'absolute', inset: 0, width: CW, height: CH, pointerEvents: 'none' }}>
-            <defs>
-              <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="white" stopOpacity="1" />
-                <stop offset="100%" stopColor="white" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            {/* Static stars */}
-            {[
-              [120,45,1.2,0.35],[340,88,0.8,0.22],[580,34,1.5,0.45],[820,71,1,0.28],[1060,22,1.3,0.38],[1320,60,0.9,0.25],[1580,42,1.1,0.32],[1760,85,0.7,0.2],
-              [65,180,0.9,0.26],[280,145,1.4,0.40],[520,200,0.8,0.22],[760,160,1.2,0.35],[1000,195,0.7,0.2],[1250,170,1.5,0.44],[1480,150,1,0.28],[1690,190,1.2,0.33],
-              [180,320,1.1,0.30],[420,290,0.9,0.24],[660,350,1.3,0.38],[900,310,0.8,0.22],[1140,340,1.6,0.46],[1400,300,1,0.28],[1620,360,0.9,0.25],[1800,305,1.2,0.34],
-              [50,460,1.4,0.40],[310,430,1,0.27],[560,480,0.8,0.22],[800,450,1.3,0.36],[1040,470,0.9,0.24],[1280,440,1.5,0.42],[1540,490,1.1,0.30],[1750,460,0.7,0.2],
-              [150,600,0.9,0.25],[390,570,1.2,0.34],[640,620,1,0.28],[880,585,0.8,0.22],[1120,610,1.4,0.40],[1360,575,0.9,0.25],[1600,630,1.1,0.31],[1790,600,1.3,0.37],
-              [90,750,1.5,0.43],[360,720,0.8,0.22],[610,770,1.2,0.33],[850,740,1,0.28],[1090,760,0.9,0.25],[1330,730,1.4,0.40],[1570,775,1.1,0.30],[1770,745,0.7,0.2],
-              [200,900,1,0.28],[450,870,1.3,0.37],[700,920,0.8,0.22],[940,890,1.2,0.34],[1180,910,1,0.28],[1420,880,1.5,0.43],[1660,930,0.9,0.25],[1810,895,1.1,0.31],
-              [110,1050,0.9,0.24],[370,1020,1.4,0.40],[620,1065,1.1,0.30],[860,1040,0.8,0.22],[1100,1055,1.3,0.36],[1350,1025,1,0.27],[1590,1075,0.9,0.24],[1770,1045,1.5,0.42],
-              [240,1200,1.2,0.33],[490,1170,0.8,0.22],[740,1215,1,0.28],[980,1185,1.4,0.40],[1220,1205,0.9,0.25],[1460,1175,1.2,0.34],[1700,1220,1.1,0.30],[1820,1190,0.7,0.2],
-              [70,1370,1.3,0.37],[320,1345,1,0.27],[570,1385,0.9,0.24],[810,1360,1.5,0.43],[1050,1380,1.1,0.30],[1290,1350,0.8,0.22],[1530,1390,1.2,0.34],[1770,1365,1,0.28],
-              [160,1490,0.8,0.22],[410,1465,1.4,0.40],[660,1510,1.2,0.33],[900,1480,1,0.28],[1140,1505,0.9,0.24],[1380,1475,1.5,0.43],[1620,1515,1.1,0.30],[1800,1485,0.7,0.2],
-            ].map(([cx,cy,r,op],i)=>(
-              <circle key={`s${i}`} cx={cx} cy={cy} r={r} fill="white" opacity={op} />
-            ))}
-            {/* Twinkling stars */}
-            {[
-              [450,130,1.2],[900,250,1],[1350,100,1.4],[1700,320,0.9],[300,700,1.1],[750,850,1.3],[1200,600,0.8],[1600,950,1.2],[500,1300,1],[1100,1150,1.5],
-            ].map(([cx,cy,r],i)=>(
-              <circle key={`tw${i}`} cx={cx} cy={cy} r={r} fill="white" opacity={0.6}>
-                <animate attributeName="opacity" values="0.15;0.6;0.15" dur={`${3 + i * 0.7}s`} begin={`${i * 0.9}s`} repeatCount="indefinite" />
-                <animate attributeName="r" values={`${r};${(r as number)*1.5};${r}`} dur={`${3 + i * 0.7}s`} begin={`${i * 0.9}s`} repeatCount="indefinite" />
-              </circle>
-            ))}
-            {/* Shooting stars */}
-            {[
-              { x1: 200,  y1: 80,  x2: 380,  y2: 180,  delay: '0s',   dur: '3.5s' },
-              { x1: 1400, y1: 50,  x2: 1600, y2: 160,  delay: '5s',   dur: '3s'   },
-              { x1: 600,  y1: 200, x2: 820,  y2: 330,  delay: '9s',   dur: '4s'   },
-              { x1: 1100, y1: 120, x2: 1350, y2: 260,  delay: '13s',  dur: '3.5s' },
-              { x1: 80,   y1: 400, x2: 260,  y2: 510,  delay: '18s',  dur: '3s'   },
-              { x1: 1600, y1: 300, x2: 1780, y2: 410,  delay: '22s',  dur: '4s'   },
-            ].map((ss, i) => (
-              <g key={`ss${i}`}>
-                <line x1={ss.x1} y1={ss.y1} x2={ss.x1} y2={ss.y1} stroke="white" strokeWidth={1.5} strokeLinecap="round">
-                  <animate attributeName="x2" values={`${ss.x1};${ss.x2}`} dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
-                  <animate attributeName="y2" values={`${ss.y1};${ss.y2}`} dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0;0.55;0.55;0" keyTimes="0;0.05;0.7;1" dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
-                </line>
-              </g>
-            ))}
-          </svg>
 
           {/* ══════════════════════════════════════════════════════════
               TOP OF FUNNEL
@@ -386,9 +335,9 @@ export default function FunnelDiagram() {
             <path id="fpath" d={flowPath} fill="none" />
             {[0, 1, 2, 3].map(j => (
               <circle key={j} r={3.5} fill={j % 2 === 0 ? ACCENT : BLUE} opacity={0.75} filter="url(#glow)">
-                <animateMotion dur={`${2.8 + j * 0.7}s`} begin={`${j * 0.85}s`} repeatCount="indefinite" path={flowPath} />
-                <animate attributeName="opacity" values="0;0.75;0.75;0" keyTimes="0;0.1;0.85;1" dur={`${2.8 + j * 0.7}s`} begin={`${j * 0.85}s`} repeatCount="indefinite" />
-                <animate attributeName="r" values="2;3.5;2" dur={`${2.8 + j * 0.7}s`} begin={`${j * 0.85}s`} repeatCount="indefinite" />
+                <animateMotion dur={`${5.5 + j * 1.2}s`} begin={`${j * 1.6}s`} repeatCount="indefinite" path={flowPath} />
+                <animate attributeName="opacity" values="0;0.75;0.75;0" keyTimes="0;0.1;0.85;1" dur={`${5.5 + j * 1.2}s`} begin={`${j * 1.6}s`} repeatCount="indefinite" />
+                <animate attributeName="r" values="2;3.5;2" dur={`${5.5 + j * 1.2}s`} begin={`${j * 1.6}s`} repeatCount="indefinite" />
               </circle>
             ))}
 
