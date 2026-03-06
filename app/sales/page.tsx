@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Check, ChevronDown, ChevronUp, Lock, ArrowRight, Star, Zap, TrendingUp } from 'lucide-react';
 import FunnelDiagram from '@/components/FunnelDiagram';
 import SEOChecker from '@/components/SEOChecker';
+import SpaceBackground from '@/components/SpaceBackground';
 const HERO_PHOTO_URL = 'https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69aa0c41665b7299ea867c81.jpg';
 
 const SALES_PASSWORD = 'RevCore2025';
@@ -435,6 +436,7 @@ function SalesDeck() {
           position: 'absolute', inset: 0,
           background: 'linear-gradient(to bottom, rgba(10,10,10,0.72) 0%, rgba(10,10,10,0.35) 45%, rgba(10,10,10,0.88) 100%)',
         }} />
+        <SpaceBackground opacity={0.45} />
         {/* Grain overlay */}
         <div style={{
           position: 'absolute', inset: 0,

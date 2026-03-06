@@ -1,127 +1,131 @@
 'use client';
 
-// Reusable space/galaxy background: stars, shooting stars, planet blobs.
-// Parent must have position: relative (or absolute) and overflow: hidden.
+// Deterministic LCG — stable across SSR/CSR, computed once at module load
+const _rng = (() => {
+  let s = 98765;
+  return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 0xffffffff; };
+})();
+
+type StarData = {
+  cx: number; cy: number; r: number;
+  dur: number; begin: number;
+  dx: number; dy: number; dDur: number;
+  sparkle: boolean;
+  color: string;
+  maxOp: number;
+};
+
+// 200 stars across tiers: tiny sparkle dust → medium → large sparkle focal points
+const STARS: StarData[] = Array.from({ length: 200 }, () => {
+  const tier = _rng();
+  const r =
+    tier < 0.30 ? 0.12 + _rng() * 0.18  // tiny dust: 0.12–0.30
+  : tier < 0.62 ? 0.30 + _rng() * 0.35  // small: 0.30–0.65
+  : tier < 0.85 ? 0.65 + _rng() * 0.75  // medium: 0.65–1.40
+  : tier < 0.95 ? 1.40 + _rng() * 0.90  // large: 1.40–2.30
+  :               2.30 + _rng() * 1.20;  // focal: 2.30–3.50
+  const cr = _rng();
+  return {
+    cx: _rng() * 1440,
+    cy: _rng() * 700,
+    r,
+    dur: 1.2 + _rng() * 7,
+    begin: _rng() * 14,
+    dx: (_rng() - 0.5) * 6,
+    dy: (_rng() - 0.5) * 6,
+    dDur: 8 + _rng() * 16,
+    // only larger stars get 4-pointed sparkle treatment
+    sparkle: r > 1.8 && _rng() > 0.3,
+    color: cr < 0.65 ? 'white' : cr < 0.82 ? '#c6d8ff' : '#fff4d8',
+    // tiny stars should be dimmer, large should flash brighter
+    maxOp: r < 0.3 ? 0.15 + _rng() * 0.25
+         : r < 0.65 ? 0.30 + _rng() * 0.35
+         :             0.55 + _rng() * 0.40,
+  };
+});
+
+// 4-pointed diamond sparkle path centered at (cx,cy)
+function sparklePath(cx: number, cy: number, a: number): string {
+  const w = a * 0.18;
+  return [
+    `M${cx},${cy - a}`,
+    `L${cx + w},${cy - w}`,
+    `L${cx + a},${cy}`,
+    `L${cx + w},${cy + w}`,
+    `L${cx},${cy + a}`,
+    `L${cx - w},${cy + w}`,
+    `L${cx - a},${cy}`,
+    `L${cx - w},${cy - w}`,
+    'Z',
+  ].join(' ');
+}
+
 export default function SpaceBackground({ opacity = 1 }: { opacity?: number }) {
-  // All stars — each gets its own flicker animation derived from index
-  const stars: [number, number, number][] = [
-    [45,  28, 1.2], [180, 65, 0.8], [310, 18, 1.4], [480, 72, 1.0], [630, 35, 1.3],
-    [790, 88, 0.9], [950, 22, 1.5], [1100,58, 1.0], [1260,14, 1.2], [1400,75, 0.8],
-    [95, 155, 0.9], [240,120, 1.3], [390,175, 0.8], [555,140, 1.1], [720,110, 1.4],
-    [870,168, 1.0], [1030,132, 0.9],[1190,178, 1.2], [1340,108, 1.5],[1430,155, 0.7],
-    [60, 265, 1.1], [210,240, 0.8], [380,285, 1.3], [540,252, 1.0], [700,275, 0.9],
-    [860,242, 1.4], [1010,290, 1.1],[1180,260, 0.8], [1320,282, 1.3],[1420,248, 1.0],
-    [130,380, 0.9], [290,350, 1.2], [460,390, 1.0], [620,365, 0.8], [780,385, 1.4],
-    [940,355, 1.1], [1090,395, 0.9],[1250,370, 1.5], [1390,388, 1.2],[1440,350, 0.7],
-    [75, 490, 1.3], [225,468, 0.9], [395,495, 1.1], [565,475, 1.4], [730,498, 0.8],
-    [895,472, 1.2], [1060,492, 1.0],[1220,468, 0.9], [1380,496, 1.3],[1440,480, 1.1],
-    [50, 560, 0.8], [170,540, 1.2], [340,575, 1.0], [510,550, 0.9], [680,580, 1.4],
-    [840,558, 1.1], [1000,575, 0.8],[1160,548, 1.3], [1330,572, 1.0],[1430,558, 0.9],
-    // extra scattered stars for denser feel
-    [280, 90, 1.3], [680, 45, 1.1], [1060, 130, 1.4], [1380, 70, 0.9],
-    [140, 310, 1.2], [520, 280, 1.0], [900, 340, 1.3], [1240, 295, 1.1],
-    [360, 520, 1.4], [1080, 490, 1.0],
-  ];
-
-  // Varied flicker sequences — gives each star a unique "personality"
-  const flickerPatterns = [
-    '0.08;0.38;0.12;0.42;0.08',
-    '0.05;0.30;0.18;0.35;0.05',
-    '0.12;0.45;0.08;0.40;0.12',
-    '0.06;0.25;0.14;0.28;0.06',
-    '0.10;0.50;0.07;0.44;0.10',
-    '0.04;0.32;0.20;0.36;0.04',
-    '0.09;0.42;0.11;0.38;0.09',
-    '0.07;0.28;0.16;0.32;0.07',
-  ];
-
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', opacity }}>
 
-      {/* ── Blurred planet blobs ───────────────────────────────────────────── */}
-      <div style={{
-        position: 'absolute', top: '-80px', right: '-60px',
-        width: '420px', height: '420px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(254,100,98,0.04) 0%, transparent 50%)',
-        animation: 'planet-drift-a 18s ease-in-out infinite',
-        willChange: 'transform',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-60px', left: '15%',
-        width: '360px', height: '360px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(107,142,254,0.03) 0%, transparent 50%)',
-        animation: 'planet-drift-b 24s ease-in-out infinite',
-        willChange: 'transform',
-      }} />
-      <div style={{
-        position: 'absolute', top: '30%', left: '-80px',
-        width: '280px', height: '280px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(148,217,107,0.03) 0%, transparent 50%)',
-        animation: 'planet-drift-c 20s ease-in-out infinite',
-        willChange: 'transform',
-      }} />
+      {/* ── Drifting planet glows ───────────────────────────────────────────── */}
+      <div style={{ position: 'absolute', top: '-80px', right: '-60px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(254,100,98,0.055) 0%, transparent 55%)', animation: 'spPlanetA 20s ease-in-out infinite', willChange: 'transform' }} />
+      <div style={{ position: 'absolute', bottom: '-80px', left: '12%', width: '420px', height: '420px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(107,142,254,0.045) 0%, transparent 55%)', animation: 'spPlanetB 26s ease-in-out infinite', willChange: 'transform' }} />
+      <div style={{ position: 'absolute', top: '25%', left: '-60px', width: '320px', height: '320px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(148,217,107,0.035) 0%, transparent 55%)', animation: 'spPlanetC 22s ease-in-out infinite', willChange: 'transform' }} />
+      <div style={{ position: 'absolute', top: '55%', right: '20%', width: '240px', height: '240px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,120,255,0.03) 0%, transparent 60%)' }} />
 
-      {/* ── Stars SVG ─────────────────────────────────────────────────────── */}
-      <svg
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-        preserveAspectRatio="xMidYMid slice"
-        viewBox="0 0 1440 600"
-      >
-        {stars.map(([cx, cy, r], i) => {
-          const dur = 3 + ((i * 1.37) % 6);
-          const begin = (i * 0.43) % 7;
-          const pattern = flickerPatterns[i % flickerPatterns.length];
-          const maxOp = 0.22 + ((i * 0.19) % 0.30);
-          const rMax = r * (1.3 + ((i * 0.11) % 0.5));
+      {/* ── Stars SVG ───────────────────────────────────────────────────────── */}
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1440 700">
+        {STARS.map((st, i) => {
+          // Sharp twinkle: spend most time dark, briefly flash bright
+          // Two rapid flashes per cycle for authentic star twinkle
+          const v1 = (st.maxOp * 0.9).toFixed(2);
+          const v2 = (st.maxOp * 0.15).toFixed(2);
+          const v3 = (st.maxOp * 0.75).toFixed(2);
+          const opVals = `0;0;${v1};${v2};0;0;${v3};0.04;0;0`;
+          const opKeys = '0;0.12;0.17;0.22;0.38;0.55;0.62;0.68;0.82;1';
+
+          if (st.sparkle) {
+            const arm = st.r * 2.8;
+            return (
+              <g key={i}>
+                <path d={sparklePath(st.cx, st.cy, arm)} fill={st.color} opacity={0}>
+                  <animate attributeName="opacity" values={opVals} keyTimes={opKeys} dur={`${st.dur.toFixed(1)}s`} begin={`${st.begin.toFixed(1)}s`} repeatCount="indefinite" />
+                  <animateTransform attributeName="transform" type="translate" values={`0,0; ${(st.dx * 0.4).toFixed(1)},${(st.dy * 0.4).toFixed(1)}; 0,0`} dur={`${st.dDur.toFixed(0)}s`} repeatCount="indefinite" additive="sum" />
+                </path>
+                {/* small bright center dot for sparkle stars */}
+                <circle cx={st.cx} cy={st.cy} r={st.r * 0.5} fill="white" opacity={0}>
+                  <animate attributeName="opacity" values={opVals} keyTimes={opKeys} dur={`${st.dur.toFixed(1)}s`} begin={`${st.begin.toFixed(1)}s`} repeatCount="indefinite" />
+                  <animateTransform attributeName="transform" type="translate" values={`0,0; ${(st.dx * 0.4).toFixed(1)},${(st.dy * 0.4).toFixed(1)}; 0,0`} dur={`${st.dDur.toFixed(0)}s`} repeatCount="indefinite" additive="sum" />
+                </circle>
+              </g>
+            );
+          }
+
           return (
-            <circle key={i} cx={cx} cy={cy} r={r} fill="white" opacity={0.08}>
-              <animate
-                attributeName="opacity"
-                values={pattern.replace(/\d+\.\d+/g, (v) => String(Math.min(parseFloat(v) * maxOp / 0.35, 0.55)))}
-                dur={`${dur.toFixed(1)}s`}
-                begin={`${begin.toFixed(1)}s`}
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="r"
-                values={`${r};${rMax.toFixed(2)};${r}`}
-                dur={`${(dur * 1.2).toFixed(1)}s`}
-                begin={`${begin.toFixed(1)}s`}
-                repeatCount="indefinite"
-              />
+            <circle key={i} cx={st.cx} cy={st.cy} r={st.r} fill={st.color} opacity={0}>
+              <animate attributeName="opacity" values={opVals} keyTimes={opKeys} dur={`${st.dur.toFixed(1)}s`} begin={`${st.begin.toFixed(1)}s`} repeatCount="indefinite" />
+              <animate attributeName="r" values={`${st.r};${(st.r * 1.5).toFixed(2)};${st.r}`} dur={`${(st.dur * 1.3).toFixed(1)}s`} begin={`${st.begin.toFixed(1)}s`} repeatCount="indefinite" />
+              <animateTransform attributeName="transform" type="translate" values={`0,0; ${st.dx.toFixed(1)},${st.dy.toFixed(1)}; ${(st.dx * 0.3).toFixed(1)},${(-st.dy * 0.5).toFixed(1)}; 0,0`} dur={`${st.dDur.toFixed(0)}s`} begin={`${(st.begin * 0.5).toFixed(1)}s`} repeatCount="indefinite" additive="sum" />
             </circle>
           );
         })}
 
-        {/* Shooting stars — rare, random positions, fast */}
+        {/* ── Shooting stars ──────────────────────────────────────────────── */}
         {([
-          { x1: 160,  y1: 55,  x2: 400,  y2: 188,  delay: '8s',  dur: '65s' },
-          { x1: 1040, y1: 38,  x2: 1275, y2: 162,  delay: '41s', dur: '72s' },
+          { x1: 120,  y1: 40,  x2: 380,  y2: 170, delay: '7s',  dur: '55s' },
+          { x1: 960,  y1: 28,  x2: 1220, y2: 150, delay: '32s', dur: '68s' },
+          { x1: 520,  y1: 15,  x2: 740,  y2: 110, delay: '18s', dur: '80s' },
+          { x1: 1280, y1: 55,  x2: 1430, y2: 130, delay: '45s', dur: '62s' },
         ]).map((ss, i) => (
-          <line key={`ss${i}`} x1={ss.x1} y1={ss.y1} x2={ss.x1} y2={ss.y1}
-            stroke="white" strokeWidth={0.9} strokeLinecap="round" opacity={0}>
+          <line key={`ss${i}`} x1={ss.x1} y1={ss.y1} x2={ss.x1} y2={ss.y1} stroke="white" strokeWidth={0.8} strokeLinecap="round" opacity={0}>
             <animate attributeName="x2" values={`${ss.x1};${ss.x2};${ss.x2}`} keyTimes="0;0.04;1" dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
             <animate attributeName="y2" values={`${ss.y1};${ss.y2};${ss.y2}`} keyTimes="0;0.04;1" dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.28;0.14;0;0" keyTimes="0;0.012;0.04;0.065;1" dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.32;0.18;0;0" keyTimes="0;0.01;0.04;0.07;1" dur={ss.dur} begin={ss.delay} repeatCount="indefinite" />
           </line>
         ))}
       </svg>
 
       <style>{`
-        @keyframes planet-drift-a {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33%       { transform: translate(-18px, 14px) scale(1.04); }
-          66%       { transform: translate(12px, -10px) scale(0.97); }
-        }
-        @keyframes planet-drift-b {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          40%       { transform: translate(16px, -12px) scale(1.05); }
-          70%       { transform: translate(-10px, 18px) scale(0.96); }
-        }
-        @keyframes planet-drift-c {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50%       { transform: translate(14px, 10px) scale(1.06); }
-        }
+        @keyframes spPlanetA { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-20px,16px) scale(1.05)} 66%{transform:translate(14px,-12px) scale(0.97)} }
+        @keyframes spPlanetB { 0%,100%{transform:translate(0,0) scale(1)} 40%{transform:translate(18px,-14px) scale(1.06)} 70%{transform:translate(-12px,20px) scale(0.95)} }
+        @keyframes spPlanetC { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(16px,12px) scale(1.07)} }
       `}</style>
     </div>
   );
