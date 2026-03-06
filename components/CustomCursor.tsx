@@ -20,11 +20,16 @@ export default function CustomCursor() {
     };
 
     document.addEventListener('mousemove', onMouseMove, { passive: true });
-    document.body.style.cursor = 'none';
+
+    // Force cursor:none on every element — prevents pointer/default styles flashing the native cursor
+    const style = document.createElement('style');
+    style.id = 'custom-cursor-hide';
+    style.textContent = '*, *::before, *::after { cursor: none !important; }';
+    document.head.appendChild(style);
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
-      document.body.style.cursor = '';
+      document.getElementById('custom-cursor-hide')?.remove();
     };
   }, []);
 

@@ -366,7 +366,7 @@ function PresentationSection() {
               {/* Label */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 14px', borderRadius: '100px', background: 'rgba(107,142,254,0.07)', border: '1px solid rgba(107,142,254,0.18)', marginBottom: '1.75rem', ...fadeUp(inView, 80) }}>
                 <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#6B8EFE', display: 'block' }} />
-                <span style={{ color: '#6B8EFE', fontSize: '0.67rem', fontWeight: 700, letterSpacing: '0.1em' }}>STAGE · SALES PRESENTATION</span>
+                <span style={{ color: '#6B8EFE', fontSize: '0.67rem', fontWeight: 700, letterSpacing: '0.1em' }}>PITCH · SALES PRESENTATION</span>
               </div>
 
               {/* Product name */}
@@ -384,7 +384,7 @@ function PresentationSection() {
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
                   animation: inView ? 'sectionGradientShift 9s ease-in-out infinite' : 'none',
-                }}>Stage.</p>
+                }}>Pitch.</p>
               </div>
 
               {/* Tagline */}
@@ -394,7 +394,7 @@ function PresentationSection() {
 
               {/* Description */}
               <p style={{ color: 'rgba(255,255,255,0.42)', lineHeight: '1.85', marginBottom: '2.25rem', fontSize: '0.93rem', ...fadeUp(inView, 300) }}>
-                Your competitors show up with a pen and a brochure. Stage puts you in a different category entirely — a custom interactive presentation that makes homeowners feel confident they&apos;re hiring the best.
+                Your competitors show up with a pen and a brochure. Pitch puts you in a different category entirely — a custom interactive presentation that makes homeowners feel confident they&apos;re hiring the best.
               </p>
 
               {/* Features */}
@@ -473,7 +473,7 @@ function IntegrationBanner() {
                 { label: 'Website leads → CRM', color: '#94D96B' },
                 { label: 'Paid Ads → CRM', color: '#6B8EFE' },
                 { label: 'Scope → CRM', color: '#94D96B' },
-                { label: 'Stage → CRM', color: '#6B8EFE' },
+                { label: 'Pitch → CRM', color: '#6B8EFE' },
                 { label: 'Follow-Up Engine → CRM', color: '#FEB64A' },
               ].map((item) => (
                 <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -568,7 +568,7 @@ function SoftwareHero() {
               Scope
             </span>
             <span style={{ padding: '4px 14px', borderRadius: '100px', background: 'rgba(107,142,254,0.1)', color: '#6B8EFE', fontSize: '0.72rem', fontWeight: 700, border: '1px solid rgba(107,142,254,0.2)' }}>
-              Stage
+              Pitch
             </span>
             <span style={{ padding: '4px 14px', borderRadius: '100px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)' }}>
               RevCore Pro
@@ -588,7 +588,7 @@ function SoftwareHero() {
           </h1>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1.1rem', lineHeight: '1.75', marginBottom: '2.5rem', ...fadeUp(inView, 600) }}>
-          Scope and Stage — two purpose-built tools that work together, from the first quote to the signed contract and the five-star review. Available separately, or bundled as RevCore Pro.
+          Scope and Pitch — two purpose-built tools that work together, from the first quote to the signed contract and the five-star review. Available separately, or bundled as RevCore Pro.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', ...fadeUp(inView, 750) }}>
           <a href="#quoting" style={{
@@ -605,7 +605,7 @@ function SoftwareHero() {
             padding: '13px 24px', borderRadius: '100px',
             fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none',
           }}>
-            Explore Stage ↓
+            Explore Pitch ↓
           </a>
         </div>
       </div>
