@@ -21,7 +21,7 @@ export default function RootLayout({
         <SmoothScroll>
           <CustomCursor />
           <Header />
-          <main style={{ paddingTop: '80px' }}>{children}</main>
+          <main>{children}</main>
           <Footer />
         </SmoothScroll>
       </body>

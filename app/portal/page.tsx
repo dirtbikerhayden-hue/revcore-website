@@ -27,7 +27,7 @@ function LoginScreen({ onLogin }: { onLogin: (email: string) => void }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#070b0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'DM Sans, sans-serif', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#070b0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'DM Sans, sans-serif', position: 'relative', overflow: 'hidden', paddingTop: 'calc(80px + 2rem)' }}>
       {/* Background glow */}
       <div style={{ position: 'absolute', top: '-120px', right: '-80px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(254,100,98,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-100px', left: '-60px', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(107,142,254,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
@@ -114,7 +114,7 @@ function Dashboard({ email, onLogout }: { email: string; onLogout: () => void })
   const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff' }}>
+    <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff', paddingTop: '80px' }}>
       {/* Portal Header */}
       <header style={{ position: 'sticky', top: 80, zIndex: 100, background: 'rgba(7,11,15,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px', maxWidth: '1200px', margin: '0 auto' }}>
