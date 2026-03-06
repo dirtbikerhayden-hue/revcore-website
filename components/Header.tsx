@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 const navLinks = [
   { label: 'Home', href: '/' },
@@ -34,6 +35,8 @@ const navLinks = [
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const pathname = usePathname();
+  const isTracker = pathname?.startsWith('/tracker');
 
   return (
     <header style={{
@@ -57,13 +60,8 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <img src="https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69a9af9fb003fa7bb8bb92ee.png" alt="RevCore" style={{ height: '32px', width: 'auto' }} />
-          <span style={{
-            fontFamily: 'DM Sans, sans-serif',
-            fontWeight: 700,
-            fontSize: '1.2rem',
-            color: '#0A0A0A',
-          }}>
-            RevCore
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: '1.2rem', color: '#0A0A0A' }}>
+            RevCore{isTracker && <span style={{ color: '#FE6462', marginLeft: '5px' }}>Tracker</span>}
           </span>
         </Link>
 
