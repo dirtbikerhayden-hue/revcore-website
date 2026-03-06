@@ -6,7 +6,7 @@ const PASS  = 'revcore2024';
 const STORE = 'rcTrackerV1';
 
 type Tab       = 'overview' | 'clients' | 'team' | 'payouts' | 'calendar' | 'settings';
-type Stage     = 'onboarding' | 'active' | 'at-risk' | 'paused' | 'churned';
+type Stage     = 'onboarding' | 'balance-pending' | 'active' | 'at-risk' | 'paused' | 'churned';
 type PlanT     = 'recurring' | 'one-time';
 type InitCommT = 'pct' | 'fixed' | 'none';
 type OngoingT  = 'pct-renewal' | 'rev-share' | 'none';
@@ -73,8 +73,9 @@ function genInitComms(c: Client): Commission[] {
 }
 
 const STAGES: Record<Stage, { label: string; color: string }> = {
-  onboarding: { label: 'Onboarding', color: '#6B8EFE' },
-  active:     { label: 'Active',     color: '#94D96B' },
+  onboarding:        { label: 'Onboarding',     color: '#6B8EFE' },
+  'balance-pending': { label: 'Balance Pending', color: '#26D9B0' },
+  active:            { label: 'Active',          color: '#94D96B' },
   'at-risk':  { label: 'At Risk',    color: '#F59E0B' },
   paused:     { label: 'Paused',     color: 'rgba(255,255,255,0.35)' },
   churned:    { label: 'Churned',    color: '#FE6462' },
@@ -191,7 +192,20 @@ function Login({ onLogin }: { onLogin: () => void }) {
 // ─── Client Modal ─────────────────────────────────────────────────────────────
 function ClientModal({ client, partners, onSave, onClose }: { client?: Client; partners: Partner[]; onSave: (c: Omit<Client, 'id' | 'at'>, isNew: boolean) => void; onClose: () => void }) {
   const [f, setF] = useState<Omit<Client, 'id' | 'at'>>(client ? { ...client } : blankC());
-  const set = (k: keyof typeof f, v: unknown) => setF(p => ({ ...p, [k]: v }));
+  const set = (k: keyof typeof f, v: unknown) => setF(p => {
+    const next = { ...p, [k]: v };
+    // Auto-set nextDue to 1 month after start for recurring plans (new clients only)
+    if (!client && (k === 'start' || k === 'planT')) {
+      const start = k === 'start' ? v as string : p.start;
+      const planT = k === 'planT' ? v as string : p.planT;
+      if (start && planT === 'recurring') {
+        const d = new Date(start + 'T00:00:00');
+        d.setMonth(d.getMonth() + 1);
+        next.nextDue = d.toISOString().slice(0, 10);
+      }
+    }
+    return next;
+  });
   const gr: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' };
   const section = (title: string) => <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '1.25rem', marginBottom: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem' }}>{title}</div>;
   const field = (label: string, node: React.ReactNode) => <div><label style={lbl}>{label}</label>{node}</div>;
@@ -299,7 +313,7 @@ function ClientModal({ client, partners, onSave, onClose }: { client?: Client; p
 
         {section('Status & Notes')}
         <div style={gr}>
-          {field('Pipeline Stage', sel(f.stage, v => set('stage', v as Stage), [['onboarding','Onboarding'],['active','Active'],['at-risk','At Risk'],['paused','Paused'],['churned','Churned']]))}
+          {field('Pipeline Stage', sel(f.stage, v => set('stage', v as Stage), [['onboarding','Onboarding'],['balance-pending','Balance Pending'],['active','Active'],['at-risk','At Risk'],['paused','Paused'],['churned','Churned']]))}
           <div />
         </div>
         <div style={{ marginTop: '0.75rem' }}>{field('Notes', <textarea value={f.notes} onChange={e => set('notes', e.target.value)} rows={3} placeholder="Any relevant notes…" style={{ ...inp, resize: 'vertical', lineHeight: 1.5 }} />)}</div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import ConditionalFooter from "@/components/ConditionalFooter";
 import SmoothScroll from "@/components/SmoothScroll";
 import CustomCursor from "@/components/CustomCursor";
 
@@ -22,7 +22,7 @@ export default function RootLayout({
           <CustomCursor />
           <Header />
           <main>{children}</main>
-          <Footer />
+          <ConditionalFooter />
         </SmoothScroll>
       </body>
     </html>
