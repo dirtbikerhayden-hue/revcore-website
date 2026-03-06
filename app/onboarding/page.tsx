@@ -190,7 +190,7 @@ export default function OnboardingPage() {
       <div style={{
         background: 'rgba(7,11,15,0.95)', backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(255,255,255,0.06)',
-        padding: '16px 0', position: 'sticky', top: 0, zIndex: 50,
+        padding: '16px 0',
       }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

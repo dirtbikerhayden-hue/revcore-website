@@ -116,7 +116,7 @@ function Dashboard({ email, onLogout }: { email: string; onLogout: () => void })
   return (
     <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff' }}>
       {/* Portal Header */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(7,11,15,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
+      <header style={{ position: 'sticky', top: 80, zIndex: 100, background: 'rgba(7,11,15,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px', maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src="https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69a9af9fb003fa7bb8bb92ee.png" alt="RevCore" style={{ height: '28px', filter: 'brightness(0) invert(1)' }} />

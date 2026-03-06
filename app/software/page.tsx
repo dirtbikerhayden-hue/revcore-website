@@ -65,7 +65,7 @@ function QuotingSection() {
 
   return (
     <section ref={ref as React.Ref<HTMLElement>} style={{ padding: '100px 0', background: '#0a0f0a', position: 'relative', overflow: 'hidden' }}>
-      <SpaceBackground opacity={0.55} />
+      <SpaceBackground opacity={0.18} />
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
           {/* Left — iPad */}
@@ -119,7 +119,7 @@ function PresentationSection() {
 
   return (
     <section ref={ref as React.Ref<HTMLElement>} style={{ padding: '100px 0', background: '#070b12', position: 'relative', overflow: 'hidden' }}>
-      <SpaceBackground opacity={0.55} />
+      <SpaceBackground opacity={0.18} />
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
           {/* Left — content */}
@@ -164,7 +164,7 @@ function IntegrationBanner() {
   const { ref, inView } = useScrollReveal({ threshold: 0.12 });
   return (
     <section ref={ref as React.Ref<HTMLElement>} style={{ padding: '80px 0', background: '#0A0A0A', position: 'relative', overflow: 'hidden' }}>
-      <SpaceBackground opacity={0.45} />
+      <SpaceBackground opacity={0.15} />
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
           borderRadius: '24px',
@@ -285,7 +285,7 @@ function SoftwareHero() {
 
   return (
     <section ref={ref as React.Ref<HTMLElement>} style={{ paddingTop: '160px', paddingBottom: '100px', background: '#070b0f', position: 'relative', overflow: 'hidden' }}>
-      <SpaceBackground opacity={0.25} />
+      <SpaceBackground opacity={0.10} />
       <div className="container" style={{ textAlign: 'center', maxWidth: '1000px', position: 'relative', zIndex: 1 }}>
         <div style={{ ...fadeUp(inView, 0) }}>
           <div style={{
