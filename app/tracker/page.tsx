@@ -33,6 +33,9 @@ interface Commission {
 }
 interface AppData { partners: Partner[]; clients: Client[]; comms: Commission[]; }
 
+const PPA_MONTHLY = 2000; // estimated monthly revenue per PPA client
+const monthlyVal = (c: Client) => c.pkg.toLowerCase().includes('ppa') ? PPA_MONTHLY : c.amount;
+
 const uid   = () => Math.random().toString(36).slice(2, 10);
 const fmtD  = (d: string) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 const fmtM  = (n: number) => '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -523,7 +526,7 @@ function RevenueChart({ data }: { data: AppData }) {
       const newC = data.clients.filter(c => (c.start || c.at)?.startsWith(m));
       return {
         label:      new Date(m + '-15').toLocaleString('en-US', { month: 'short', year: '2-digit' }),
-        revenue:    active.reduce((s, c) => s + c.amount, 0),
+        revenue:    active.reduce((s, c) => s + monthlyVal(c), 0),
         clients:    active.length,
         newClients: newC.length,
       };
@@ -686,9 +689,10 @@ function OverviewTab({ data }: { data: AppData }) {
   // 15-Appt clients: manually charged monthly — treat as recurring revenue when active
   const apptActive    = data.clients.filter(c => c.planT === 'one-time' && c.stage === 'active');
   const apptMonthly   = apptActive.reduce((s, c) => s + c.amount, 0);
-  const totalMonthly  = retainerMRR + apptMonthly;
-  // PPA clients (estimated $1,500–$2,800/mo profit each)
+  // PPA clients: estimated at $2,000/mo each
   const ppaActive     = data.clients.filter(c => c.pkg.toLowerCase().includes('ppa') && c.stage !== 'churned' && c.stage !== 'at-risk');
+  const ppaMonthly    = ppaActive.length * PPA_MONTHLY;
+  const totalMonthly  = retainerMRR + apptMonthly + ppaMonthly;
   const activeClients  = data.clients.filter(c => c.stage === 'active');
   const atRiskClients  = data.clients.filter(c => c.stage === 'at-risk');
   const issueClients   = data.clients.filter(c => c.payStat === 'failed' || c.payStat === 'overdue');
@@ -699,8 +703,8 @@ function OverviewTab({ data }: { data: AppData }) {
   const pName = (id: string) => data.partners.find(p => p.id === id)?.name || '—';
 
   const thisMonth        = today().slice(0, 7);
-  const newThisMonth     = data.clients.filter(c => (c.start || c.at)?.startsWith(thisMonth));
-  const newMonthRevenue  = newThisMonth.reduce((s, c) => s + c.amount, 0);
+  const newThisMonth     = data.clients.filter(c => c.start && c.start.startsWith(thisMonth));
+  const newMonthRevenue  = newThisMonth.reduce((s, c) => s + monthlyVal(c), 0);
   const cashOutstanding  = data.clients.reduce((s, c) =>
     s + (!c.depPaid ? c.deposit : 0) + (!c.balPaid && c.bal > 0 ? c.bal : 0), 0);
   const churnedClients   = data.clients.filter(c => c.stage === 'churned');
