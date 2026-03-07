@@ -153,17 +153,28 @@ export default function Header() {
             href="/contact"
             className="hidden-mobile"
             style={{
-              display: 'inline-flex', alignItems: 'center',
-              background: isDark ? 'rgba(255,255,255,0.1)' : '#0A0A0A',
+              display: 'inline-flex', alignItems: 'center', position: 'relative', overflow: 'hidden',
+              background: isDark ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #1a1a1a 0%, #0A0A0A 100%)',
               color: 'white',
-              border: isDark ? '1px solid rgba(255,255,255,0.15)' : 'none',
-              padding: '9px 20px', borderRadius: '100px',
+              border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.08)',
+              padding: '9px 22px', borderRadius: '100px',
               fontSize: '0.85rem', fontWeight: 700,
               textDecoration: 'none', whiteSpace: 'nowrap',
-              transition: 'opacity 0.2s, background 0.2s',
+              boxShadow: isDark ? '0 0 0 rgba(255,255,255,0)' : '0 2px 12px rgba(0,0,0,0.18)',
+              transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s ease, background 0.22s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.82')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
+              e.currentTarget.style.boxShadow = isDark
+                ? '0 0 24px rgba(255,255,255,0.12), 0 6px 20px rgba(0,0,0,0.3)'
+                : '0 6px 24px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.08)';
+              e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.14)' : 'linear-gradient(135deg, #2e2e2e 0%, #181818 100%)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = isDark ? '0 0 0 rgba(255,255,255,0)' : '0 2px 12px rgba(0,0,0,0.18)';
+              e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #1a1a1a 0%, #0A0A0A 100%)';
+            }}
           >
             Book a call
           </Link>

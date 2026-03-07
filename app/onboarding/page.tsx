@@ -7,8 +7,6 @@ import SpaceBackground from '@/components/SpaceBackground';
 
 const WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/25618535/uwiidgu/';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
 type FormData = {
   companyName: string;
   fullName: string;
@@ -19,8 +17,7 @@ type FormData = {
   officeLocation: string;
   serviceAreas: string;
   maxDriveDistance: string;
-  availFrom: string;
-  availTo: string;
+  availDays: string;
   service: string;
   startingPrice: string;
   differentiation: string;
@@ -39,8 +36,7 @@ const EMPTY: FormData = {
   officeLocation: '',
   serviceAreas: '',
   maxDriveDistance: '',
-  availFrom: '',
-  availTo: '',
+  availDays: '',
   service: '',
   startingPrice: '',
   differentiation: '',
@@ -115,7 +111,6 @@ function SectionHeader({ number, title, sub }: { number: string; title: string; 
 
 export default function OnboardingPage() {
   const [form, setForm] = useState<FormData>(EMPTY);
-  const [availDays, setAvailDays] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -123,12 +118,6 @@ export default function OnboardingPage() {
 
   function set(k: keyof FormData, v: string | boolean) {
     setForm((prev) => ({ ...prev, [k]: v }));
-  }
-
-  function toggleDay(day: string) {
-    setAvailDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -161,8 +150,7 @@ export default function OnboardingPage() {
       office_location: form.officeLocation || '(not provided)',
       service_areas: form.serviceAreas,
       max_drive_distance: form.maxDriveDistance || '(not provided)',
-      availability_days: availDays.length ? availDays.join(', ') : '(not specified)',
-      availability_hours: form.availFrom && form.availTo ? `${form.availFrom} to ${form.availTo}` : '(not specified)',
+      availability: form.availDays.trim() || '(not specified)',
       service_to_drive: form.service,
       starting_price: form.startingPrice,
       differentiation: form.differentiation || '(not provided)',
@@ -363,63 +351,22 @@ export default function OnboardingPage() {
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
                     Days Available for Appointments<span style={{ color: '#FE6462', marginLeft: '3px' }}>*</span>
                   </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {DAYS.map((day) => {
-                      const selected = availDays.includes(day);
-                      return (
-                        <button
-                          key={day}
-                          type="button"
-                          onClick={() => toggleDay(day)}
-                          style={{
-                            padding: '9px 16px', borderRadius: '10px', fontSize: '0.83rem', fontWeight: 600,
-                            border: selected ? '1px solid rgba(254,100,98,0.55)' : '1px solid rgba(255,255,255,0.08)',
-                            background: selected ? 'rgba(254,100,98,0.12)' : 'rgba(255,255,255,0.03)',
-                            color: selected ? '#FE6462' : 'rgba(255,255,255,0.45)',
-                            cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', transition: 'all 0.18s',
-                          }}
-                        >
-                          {day.slice(0, 3)}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.28)', margin: '0 0 10px', lineHeight: 1.5 }}>Include any day-specific hours if they differ (e.g. Mon to Fri 8am to 5pm, Sat 9am to 1pm)</p>
+                  <textarea
+                    value={form.availDays}
+                    onChange={(e) => set('availDays', e.target.value)}
+                    required
+                    rows={3}
+                    placeholder="e.g. Monday to Friday 8am to 6pm, Saturday 9am to 2pm, closed Sunday"
+                    style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.65' }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(254,100,98,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(254,100,98,0.08)'; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  />
                 </div>
 
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>
-                    Appointment Hours<span style={{ color: '#FE6462', marginLeft: '3px' }}>*</span>
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>From</label>
-                      <input
-                        type="time"
-                        value={form.availFrom}
-                        onChange={(e) => set('availFrom', e.target.value)}
-                        required
-                        style={{ ...inputStyle, colorScheme: 'dark' }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(254,100,98,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(254,100,98,0.08)'; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>To</label>
-                      <input
-                        type="time"
-                        value={form.availTo}
-                        onChange={(e) => set('availTo', e.target.value)}
-                        required
-                        style={{ ...inputStyle, colorScheme: 'dark' }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(254,100,98,0.5)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(254,100,98,0.08)'; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; }}
-                      />
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Section 03 */}
