@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase, hasSupabase } from '@/lib/supabase';
+import SpaceBackground from '@/components/SpaceBackground';
 
 const PASS  = 'revcore2024';
 const STORE = 'rcTrackerV1';
@@ -106,38 +107,6 @@ const blankC = (): Omit<Client, 'id' | 'at'> => ({
   isUpsold: false, origPkg: '', origAmount: 0, upsoldAt: '',
 });
 
-// Deterministic star field
-const STARS = (() => {
-  const arr: { x: number; y: number; r: number; bg: string; dur: number; delay: number }[] = [];
-  let s = 42317;
-  const rng = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 0xffffffff; };
-  for (let i = 0; i < 90; i++) {
-    const op = 0.2 + rng() * 0.7;
-    arr.push({ x: rng() * 100, y: rng() * 100, r: 0.8 + rng() * 1.8, bg: `rgba(255,255,255,${op.toFixed(2)})`, dur: 2.5 + rng() * 4, delay: rng() * 6 });
-  }
-  return arr;
-})();
-
-// ─── Cosmic Background ────────────────────────────────────────────────────────
-function CosmicBg() {
-  return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-      {STARS.map((st, i) => (
-        <div key={i} style={{ position: 'absolute', left: `${st.x}%`, top: `${st.y}%`, width: `${st.r * 2}px`, height: `${st.r * 2}px`, borderRadius: '50%', background: st.bg, animation: `starPulse ${st.dur}s ease-in-out ${st.delay}s infinite` }} />
-      ))}
-      {/* Planet orbs */}
-      <div style={{ position: 'absolute', top: '-100px', right: '-80px', width: '480px', height: '480px', borderRadius: '50%', background: 'radial-gradient(circle at 38% 38%, rgba(254,100,98,0.14) 0%, rgba(254,100,98,0.04) 40%, transparent 70%)', filter: 'blur(1px)' }} />
-      <div style={{ position: 'absolute', bottom: '-150px', left: '-100px', width: '560px', height: '560px', borderRadius: '50%', background: 'radial-gradient(circle at 62% 62%, rgba(107,142,254,0.12) 0%, rgba(107,142,254,0.03) 40%, transparent 70%)', filter: 'blur(2px)' }} />
-      <div style={{ position: 'absolute', top: '38%', left: '55%', width: '240px', height: '240px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(148,217,107,0.06) 0%, transparent 70%)' }} />
-      <div style={{ position: 'absolute', top: '20%', left: '25%', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,120,255,0.07) 0%, transparent 70%)' }} />
-      {/* Shooting stars */}
-      <div style={{ position: 'absolute', top: '12%', left: '-60px', width: '120px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.7), transparent)', transform: 'rotate(-20deg)', animation: 'shootAcross 8s linear 1s infinite' }} />
-      <div style={{ position: 'absolute', top: '45%', left: '-80px', width: '90px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(254,100,98,0.6), transparent)', transform: 'rotate(-15deg)', animation: 'shootAcross 12s linear 5s infinite' }} />
-      <div style={{ position: 'absolute', top: '70%', left: '-50px', width: '70px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(107,142,254,0.5), transparent)', transform: 'rotate(-25deg)', animation: 'shootAcross 15s linear 9s infinite' }} />
-    </div>
-  );
-}
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const card: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '1.25rem 1.5rem', backdropFilter: 'blur(8px)' };
 const glassCard: React.CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '20px', padding: '1.5rem', backdropFilter: 'blur(12px)' };
@@ -166,7 +135,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
   };
   return (
     <div style={{ minHeight: '100vh', background: '#070b0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'DM Sans, sans-serif', paddingTop: 'calc(80px + 2rem)', position: 'relative', overflow: 'hidden' }}>
-      <CosmicBg />
+      <SpaceBackground fixed />
       <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1, animation: 'trackerFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) both' }}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '72px', height: '72px', background: 'linear-gradient(135deg,rgba(254,100,98,0.15),rgba(254,100,98,0.05))', border: '1px solid rgba(254,100,98,0.3)', borderRadius: '20px', marginBottom: '1.25rem', boxShadow: '0 0 40px rgba(254,100,98,0.15)' }}>
@@ -2171,7 +2140,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff', paddingTop: '0', position: 'relative' }}>
-      <CosmicBg />
+      <SpaceBackground fixed />
 
       {/* Floating sign-out */}
       <div style={{ position: 'fixed', top: '20px', right: '24px', zIndex: 200, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2218,7 +2187,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         @keyframes trackerFadeUp { from { opacity:0; transform:translateY(28px) } to { opacity:1; transform:translateY(0) } }
         @keyframes cardReveal { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
         @keyframes starPulse { 0%,100% { transform:scale(1); opacity:1 } 50% { transform:scale(0.4); opacity:0.1 } }
-        @keyframes shootAcross { 0% { transform:translateX(0) rotate(0deg); opacity:0 } 5% { opacity:1 } 25% { transform:translateX(110vw) rotate(0deg); opacity:0 } 100% { transform:translateX(110vw); opacity:0 } }
         @media (max-width:700px) { table { font-size:0.78rem } }
         input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(0.6); cursor:pointer }
         select option { background:#1a1f28 }

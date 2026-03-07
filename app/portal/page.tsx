@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import SpaceBackground from '@/components/SpaceBackground';
 
 const PORTAL_PASSWORD = 'revcoreclient';
 const STORAGE_KEY = 'rcPortalAuth';
@@ -16,82 +17,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'resources', label: 'Resources' },
   { id: 'support', label: 'Support' },
 ];
-
-// ─── Star Field ──────────────────────────────────────────────────────────────
-function StarField() {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-    let raf: number;
-    let w = 0, h = 0;
-    const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
-    resize();
-    window.addEventListener('resize', resize);
-    function rand(a: number, b: number) { return Math.random() * (b - a) + a; }
-    interface Star { x: number; y: number; r: number; base: number; speed: number; phase: number; spark: boolean; }
-    const stars: Star[] = Array.from({ length: 130 }, () => ({
-      x: rand(0, 1), y: rand(0, 1),
-      r: rand(0.15, 1.05),
-      base: rand(0.05, 0.35),
-      speed: rand(0.006, 0.026),
-      phase: rand(0, Math.PI * 2),
-      spark: Math.random() < 0.13,
-    }));
-    interface Shooter { x: number; y: number; vx: number; vy: number; len: number; life: number; max: number; }
-    const shooters: Shooter[] = [];
-    let nextShoot = performance.now() + rand(20000, 40000);
-    function spawnShooter() {
-      const angle = rand(18, 50) * Math.PI / 180;
-      const spd = rand(2.5, 4.5);
-      shooters.push({ x: rand(0, w * 0.65), y: rand(0, h * 0.5), vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd, len: rand(55, 110), life: 0, max: Math.floor(rand(55, 95)) });
-    }
-    let frame = 0;
-    function draw(now: number) {
-      frame++;
-      ctx.clearRect(0, 0, w, h);
-      for (const s of stars) {
-        const alpha = Math.max(0, Math.min(1, s.base + Math.sin(frame * s.speed + s.phase) * 0.1));
-        const sx = s.x * w, sy = s.y * h;
-        ctx.globalAlpha = alpha;
-        if (s.spark) {
-          const sz = s.r * 2.4;
-          ctx.strokeStyle = '#fff'; ctx.lineWidth = 0.6;
-          ctx.beginPath(); ctx.moveTo(sx - sz, sy); ctx.lineTo(sx + sz, sy); ctx.moveTo(sx, sy - sz); ctx.lineTo(sx, sy + sz); ctx.stroke();
-          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(sx, sy, s.r * 0.5, 0, Math.PI * 2); ctx.fill();
-        } else {
-          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(sx, sy, s.r, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-      ctx.globalAlpha = 1;
-      if (now >= nextShoot) { spawnShooter(); nextShoot = now + rand(25000, 50000); }
-      for (let i = shooters.length - 1; i >= 0; i--) {
-        const sh = shooters[i]; sh.life++;
-        if (sh.life > sh.max) { shooters.splice(i, 1); continue; }
-        const t = sh.life / sh.max;
-        const alpha = t < 0.15 ? t / 0.15 : Math.pow(1 - (t - 0.15) / 0.85, 1.8);
-        const hx = sh.x + sh.vx * sh.life, hy = sh.y + sh.vy * sh.life;
-        const spd = Math.sqrt(sh.vx * sh.vx + sh.vy * sh.vy);
-        const nx = sh.vx / spd, ny = sh.vy / spd;
-        const tx = hx - nx * sh.len, ty = hy - ny * sh.len;
-        const g = ctx.createLinearGradient(tx, ty, hx, hy);
-        g.addColorStop(0, 'rgba(255,255,255,0)');
-        g.addColorStop(0.6, `rgba(255,255,255,${alpha * 0.4})`);
-        g.addColorStop(1, `rgba(255,255,255,${alpha * 0.88})`);
-        ctx.strokeStyle = g; ctx.lineWidth = 1.1; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(hx, hy); ctx.stroke();
-        const rg = ctx.createRadialGradient(hx, hy, 0, hx, hy, 2.5);
-        rg.addColorStop(0, `rgba(255,255,255,${alpha * 0.85})`); rg.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(hx, hy, 2.5, 0, Math.PI * 2); ctx.fill();
-      }
-      raf = requestAnimationFrame(draw);
-    }
-    raf = requestAnimationFrame(draw);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
-  }, []);
-  return <canvas ref={ref} style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }} />;
-}
 
 // ─── Login Screen ───────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
@@ -116,7 +41,7 @@ function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#070b0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'DM Sans, sans-serif', position: 'relative', overflow: 'hidden' }}>
-      <StarField />
+      <SpaceBackground fixed />
       {/* Background glows */}
       <div style={{ position: 'absolute', top: '-120px', right: '-80px', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(254,100,98,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-100px', left: '-60px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(107,142,254,0.03) 0%, transparent 60%)', pointerEvents: 'none' }} />
@@ -492,7 +417,7 @@ function Dashboard({ name, onLogout }: { name: string; onLogout: () => void }) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff' }}>
-      <StarField />
+      <SpaceBackground fixed />
       <PortalHeader name={name} activeTab={activeTab} setActiveTab={handleTabChange} onLogout={onLogout} highlightTab={tourHighlight} />
 
       <main style={{
