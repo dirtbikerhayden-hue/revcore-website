@@ -512,14 +512,15 @@ function RevenueChart({ data }: { data: AppData }) {
     }
     const currentMonth = today().slice(0, 7);
     return months.map(m => {
-      // Historical months: include churned clients (they were paying then)
-      // Current month: only count currently active clients
+      // Use start date (actual service start) for historical accuracy.
+      // Historical months include churned clients; current month excludes them.
       const active = data.clients.filter(c => {
-        if (!c.at || c.at.slice(0, 7) > m) return false;
+        const d = c.start || c.at;
+        if (!d || d.slice(0, 7) > m) return false;
         if (m >= currentMonth) return c.stage !== 'churned' && c.stage !== 'paused';
         return true;
       });
-      const newC   = data.clients.filter(c => c.at?.startsWith(m));
+      const newC = data.clients.filter(c => (c.start || c.at)?.startsWith(m));
       return {
         label:      new Date(m + '-15').toLocaleString('en-US', { month: 'short', year: '2-digit' }),
         revenue:    active.reduce((s, c) => s + c.amount, 0),
@@ -698,7 +699,7 @@ function OverviewTab({ data }: { data: AppData }) {
   const pName = (id: string) => data.partners.find(p => p.id === id)?.name || '—';
 
   const thisMonth        = today().slice(0, 7);
-  const newThisMonth     = data.clients.filter(c => c.at?.startsWith(thisMonth));
+  const newThisMonth     = data.clients.filter(c => (c.start || c.at)?.startsWith(thisMonth));
   const newMonthRevenue  = newThisMonth.reduce((s, c) => s + c.amount, 0);
   const cashOutstanding  = data.clients.reduce((s, c) =>
     s + (!c.depPaid ? c.deposit : 0) + (!c.balPaid && c.bal > 0 ? c.bal : 0), 0);
