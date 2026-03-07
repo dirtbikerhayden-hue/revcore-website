@@ -510,8 +510,15 @@ function RevenueChart({ data }: { data: AppData }) {
       const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
       months.push(d.toISOString().slice(0, 7));
     }
+    const currentMonth = today().slice(0, 7);
     return months.map(m => {
-      const active = data.clients.filter(c => c.at && c.at.slice(0, 7) <= m && c.stage !== 'churned');
+      // Historical months: include churned clients (they were paying then)
+      // Current month: only count currently active clients
+      const active = data.clients.filter(c => {
+        if (!c.at || c.at.slice(0, 7) > m) return false;
+        if (m >= currentMonth) return c.stage !== 'churned' && c.stage !== 'paused';
+        return true;
+      });
       const newC   = data.clients.filter(c => c.at?.startsWith(m));
       return {
         label:      new Date(m + '-15').toLocaleString('en-US', { month: 'short', year: '2-digit' }),
