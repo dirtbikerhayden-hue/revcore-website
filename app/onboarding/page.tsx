@@ -11,13 +11,17 @@ type FormData = {
   companyName: string;
   fullName: string;
   role: string;
+  primaryNiche: string;
   email: string;
   phone: string;
+  businessPhone: string;
   website: string;
   officeLocation: string;
   serviceAreas: string;
   maxDriveDistance: string;
   availDays: string;
+  salesReps: string;
+  closeRate: string;
   service: string;
   startingPrice: string;
   differentiation: string;
@@ -30,13 +34,17 @@ const EMPTY: FormData = {
   companyName: '',
   fullName: '',
   role: '',
+  primaryNiche: '',
   email: '',
   phone: '',
+  businessPhone: '',
   website: '',
   officeLocation: '',
   serviceAreas: '',
   maxDriveDistance: '',
   availDays: '',
+  salesReps: '',
+  closeRate: '',
   service: '',
   startingPrice: '',
   differentiation: '',
@@ -144,13 +152,17 @@ export default function OnboardingPage() {
       company_name: form.companyName,
       full_name: form.fullName,
       role: form.role,
+      primary_niche: form.primaryNiche,
       email: form.email,
-      phone: form.phone,
+      personal_cell: form.phone,
+      business_phone: form.businessPhone || '(not provided)',
       website: form.website || '(not provided)',
-      office_location: form.officeLocation || '(not provided)',
+      office_location: form.officeLocation,
       service_areas: form.serviceAreas,
       max_drive_distance: form.maxDriveDistance || '(not provided)',
       availability: form.availDays.trim() || '(not specified)',
+      dedicated_sales_reps: form.salesReps || '(not provided)',
+      close_rate: form.closeRate || '(not provided)',
       service_to_drive: form.service,
       starting_price: form.startingPrice,
       differentiation: form.differentiation || '(not provided)',
@@ -306,9 +318,11 @@ export default function OnboardingPage() {
                   <InputField label="Company Name" name="companyName" value={form.companyName} onChange={set} required placeholder="ABC Roofing Co." />
                   <InputField label="Your Full Name" name="fullName" value={form.fullName} onChange={set} required placeholder="John Smith" />
                   <InputField label="Role / Title" name="role" value={form.role} onChange={set} required placeholder="Owner, Sales Manager" />
+                  <InputField label="Primary Niche / Industry" name="primaryNiche" value={form.primaryNiche} onChange={set} required placeholder="Roofing, HVAC, Solar, Siding..." />
                   <InputField label="Best Email" name="email" value={form.email} onChange={set} required type="email" placeholder="john@company.com" />
-                  <InputField label="Cell Phone" name="phone" value={form.phone} onChange={set} required type="tel" placeholder="(555) 000-0000" />
-                  <InputField label="Company Website" name="website" value={form.website} onChange={set} required placeholder="www.company.com" />
+                  <InputField label="Personal Cell" name="phone" value={form.phone} onChange={set} required type="tel" placeholder="(555) 000-0000" />
+                  <InputField label="Business Phone" name="businessPhone" value={form.businessPhone} onChange={set} placeholder="(555) 000-0000" />
+                  <InputField label="Company Website" name="website" value={form.website} onChange={set} placeholder="www.company.com" />
                 </div>
                 <div style={{ marginTop: '14px' }}>
                   <InputField label="Primary Office Location" name="officeLocation" value={form.officeLocation} onChange={set} required placeholder="123 Main St, Dallas, TX 75201" />
@@ -398,6 +412,20 @@ export default function OnboardingPage() {
                       placeholder="e.g. $8,500, starts at $12k, avg job $25,000"
                     />
                   </div>
+                  <InputField
+                    label="Dedicated Sales Reps"
+                    name="salesReps"
+                    value={form.salesReps}
+                    onChange={set}
+                    placeholder="e.g. 3, just me, 1 full-time + 2 part-time"
+                  />
+                  <InputField
+                    label="Current Close Rate"
+                    name="closeRate"
+                    value={form.closeRate}
+                    onChange={set}
+                    placeholder="e.g. 40%, 1 in 3 appointments, unsure"
+                  />
                 </div>
 
                 <div>
@@ -568,46 +596,32 @@ export default function OnboardingPage() {
 
         {/* ── Success Modal ── */}
         {submitted && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div style={{ width: '100%', maxWidth: '920px', background: '#0d1117', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1.6fr', boxShadow: '0 40px 120px rgba(0,0,0,0.7)' }}>
-              <div style={{ background: 'linear-gradient(160deg, #0f1a0f 0%, #0a0f0a 100%)', padding: '3rem 2.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(148,217,107,0.15)', border: '1px solid rgba(148,217,107,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                  <CheckCircle size={22} color="#94D96B" />
-                </div>
-                <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '1.6rem', fontWeight: 800, color: 'white', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: '0.875rem' }}>
-                  You&apos;re locked in.
-                </h2>
-                <p style={{ color: 'rgba(255,255,255,0.42)', lineHeight: '1.75', fontSize: '0.9rem', marginBottom: '1.75rem' }}>
-                  We received your onboarding form. Your rep will review it before your call and come prepared with a custom plan for your business.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '2rem' }}>
-                  {['Form received, going to your rep now', 'Call prep starts immediately', 'Expect contact within 24 hours'].map((item) => (
-                    <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <CheckCircle size={13} color="#94D96B" />
-                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.48)' }}>{item}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ background: 'rgba(148,217,107,0.07)', border: '1px solid rgba(148,217,107,0.15)', borderRadius: '12px', padding: '12px 16px' }}>
-                  <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.38)', lineHeight: '1.6', margin: 0 }}>
-                    <strong style={{ color: 'rgba(255,255,255,0.62)' }}>Didn&apos;t share your Google Drive link?</strong><br />
-                    Email it to{' '}
-                    <a href="mailto:hello@revcorehq.com" style={{ color: '#94D96B', textDecoration: 'none' }}>hello@revcorehq.com</a>{' '}
-                    before your call.
-                  </p>
-                </div>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ width: '100%', maxWidth: '520px', background: 'linear-gradient(160deg, #0f1a0f 0%, #0a0f0a 100%)', borderRadius: '24px', border: '1px solid rgba(148,217,107,0.18)', padding: '3.5rem 3rem', boxShadow: '0 40px 120px rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(148,217,107,0.15)', border: '1px solid rgba(148,217,107,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.75rem', boxShadow: '0 0 40px rgba(148,217,107,0.12)' }}>
+                <CheckCircle size={26} color="#94D96B" />
               </div>
-              <div style={{ background: 'white', minHeight: '560px' }}>
-                <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f0f0f0' }}>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
-                    Book Your Onboarding Call
-                  </p>
-                </div>
-                <iframe
-                  src="https://api.leadconnectorhq.com/widget/booking/NV47jMb2Se8WlgRuKuA5"
-                  style={{ width: '100%', border: 'none', minHeight: '510px', display: 'block' }}
-                  id="onboarding-calendar"
-                />
+              <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '2rem', fontWeight: 800, color: 'white', lineHeight: 1.1, letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
+                You&apos;re all set.
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.48)', lineHeight: '1.75', fontSize: '0.95rem', marginBottom: '2rem', maxWidth: '380px' }}>
+                We received your onboarding form. Your rep will review everything before your call and come prepared with a custom plan for your business.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginBottom: '2rem' }}>
+                {['Form received, going to your rep now', 'Call prep starts immediately', 'Expect contact within 24 hours'].map((item) => (
+                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(148,217,107,0.05)', border: '1px solid rgba(148,217,107,0.12)', borderRadius: '10px', padding: '10px 14px' }}>
+                    <CheckCircle size={14} color="#94D96B" style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)' }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px 18px', width: '100%' }}>
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', lineHeight: '1.65', margin: 0 }}>
+                  <strong style={{ color: 'rgba(255,255,255,0.58)' }}>Didn&apos;t share your Google Drive link?</strong>{' '}
+                  Email it to{' '}
+                  <a href="mailto:hello@revcorehq.com" style={{ color: '#94D96B', textDecoration: 'none' }}>hello@revcorehq.com</a>{' '}
+                  before your call.
+                </p>
               </div>
             </div>
           </div>
