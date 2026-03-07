@@ -41,11 +41,11 @@ function StarField() {
     }));
     interface Shooter { x: number; y: number; vx: number; vy: number; len: number; life: number; max: number; }
     const shooters: Shooter[] = [];
-    let nextShoot = performance.now() + rand(4000, 10000);
+    let nextShoot = performance.now() + rand(20000, 40000);
     function spawnShooter() {
       const angle = rand(18, 50) * Math.PI / 180;
-      const spd = rand(9, 18);
-      shooters.push({ x: rand(0, w * 0.65), y: rand(0, h * 0.5), vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd, len: rand(65, 130), life: 0, max: Math.floor(rand(22, 42)) });
+      const spd = rand(2.5, 4.5);
+      shooters.push({ x: rand(0, w * 0.65), y: rand(0, h * 0.5), vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd, len: rand(55, 110), life: 0, max: Math.floor(rand(55, 95)) });
     }
     let frame = 0;
     function draw(now: number) {
@@ -65,7 +65,7 @@ function StarField() {
         }
       }
       ctx.globalAlpha = 1;
-      if (now >= nextShoot) { spawnShooter(); nextShoot = now + rand(5000, 15000); }
+      if (now >= nextShoot) { spawnShooter(); nextShoot = now + rand(25000, 50000); }
       for (let i = shooters.length - 1; i >= 0; i--) {
         const sh = shooters[i]; sh.life++;
         if (sh.life > sh.max) { shooters.splice(i, 1); continue; }
@@ -118,8 +118,8 @@ function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
     <div style={{ minHeight: '100vh', background: '#070b0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'DM Sans, sans-serif', position: 'relative', overflow: 'hidden' }}>
       <StarField />
       {/* Background glows */}
-      <div style={{ position: 'absolute', top: '-120px', right: '-80px', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(254,100,98,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '-100px', left: '-60px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(107,142,254,0.06) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '-120px', right: '-80px', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(254,100,98,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-100px', left: '-60px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(107,142,254,0.03) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
       <div style={{ width: '100%', maxWidth: '440px', position: 'relative', zIndex: 1, animation: 'loginFadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both' }}>
         {/* Hero header */}
