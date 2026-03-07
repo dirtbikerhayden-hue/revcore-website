@@ -290,18 +290,6 @@ export default function About() {
               <GrowthDashboard active={inView} />
             </div>
 
-            {/* Floating ROI badge */}
-            <div style={{
-              position: 'absolute', top: '-1.25rem', right: '-2rem',
-              background: 'var(--color-primary)', color: 'var(--color-white)',
-              borderRadius: '16px', padding: '18px 22px',
-              boxShadow: '0 12px 40px rgba(254,100,98,0.35)',
-              ...scaleUp(inView, 500),
-            }}>
-              <div style={{ fontSize: '1.9rem', fontWeight: 800, fontFamily: 'DM Sans, sans-serif', lineHeight: 1 }}>28x</div>
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.65)', marginTop: '3px' }}>Average ROI</div>
-            </div>
-
             {/* Floating star badge */}
             <div style={{
               position: 'absolute', bottom: '2rem', left: '-1.5rem',
