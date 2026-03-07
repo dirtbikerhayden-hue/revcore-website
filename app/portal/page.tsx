@@ -1,10 +1,21 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const PORTAL_PASSWORD = 'revcoreclient';
 const STORAGE_KEY = 'rcPortalAuth';
+const DEMO_KEY = (name: string) => `rc_portal_seen_demo_${name.toLowerCase()}`;
+const PORTAL_HEADER_H = 60;
+
+type Tab = 'home' | 'sales' | 'gmb' | 'resources' | 'support';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'home', label: 'Dashboard' },
+  { id: 'sales', label: 'Sales Mastery' },
+  { id: 'gmb', label: 'Integrations' },
+  { id: 'resources', label: 'Resources' },
+  { id: 'support', label: 'Support' },
+];
 
 // ─── Login Screen ───────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
@@ -28,7 +39,7 @@ function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#070b0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'DM Sans, sans-serif', position: 'relative', overflow: 'hidden', paddingTop: 'calc(80px + 2rem)' }}>
+    <div style={{ minHeight: '100vh', background: '#070b0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'DM Sans, sans-serif', position: 'relative', overflow: 'hidden' }}>
       {/* Background glows */}
       <div style={{ position: 'absolute', top: '-120px', right: '-80px', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(254,100,98,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-100px', left: '-60px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(107,142,254,0.06) 0%, transparent 60%)', pointerEvents: 'none' }} />
@@ -114,45 +125,223 @@ function LoginScreen({ onLogin }: { onLogin: (name: string) => void }) {
   );
 }
 
-// ─── Dashboard ───────────────────────────────────────────────────────────────
-type Tab = 'home' | 'sales' | 'gmb' | 'resources' | 'support';
-
-function Dashboard({ name, onLogout }: { name: string; onLogout: () => void }) {
-  const [activeTab, setActiveTab] = useState<Tab>('home');
-  const displayName = name;
-
+// ─── Portal Header ────────────────────────────────────────────────────────────
+function PortalHeader({ name, activeTab, setActiveTab, onLogout }: {
+  name: string; activeTab: Tab; setActiveTab: (t: Tab) => void; onLogout: () => void;
+}) {
   return (
-    <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff', paddingTop: '80px' }}>
-      {/* Floating sign-out */}
-      <div style={{ position: 'fixed', top: '20px', right: '24px', zIndex: 200, display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ color: 'rgba(0,0,0,0.45)', fontSize: '0.82rem', fontWeight: 600 }}>Welcome, {displayName}</span>
-        <button onClick={onLogout} style={{ background: 'rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '8px', color: 'rgba(0,0,0,0.55)', fontSize: '0.82rem', padding: '6px 14px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, backdropFilter: 'blur(8px)', transition: 'all 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.12)'; e.currentTarget.style.color = '#000'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.07)'; e.currentTarget.style.color = 'rgba(0,0,0,0.55)'; }}>
-          Sign out
-        </button>
+    <header style={{
+      position: 'fixed', top: 0, left: 0, right: 0, height: `${PORTAL_HEADER_H}px`, zIndex: 200,
+      display: 'flex', alignItems: 'center', padding: '0 clamp(1rem, 4vw, 2.5rem)', gap: '1rem',
+      background: 'rgba(7,11,15,0.88)', backdropFilter: 'blur(20px) saturate(1.4)',
+      WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+      borderBottom: '1px solid rgba(255,255,255,0.07)', fontFamily: 'DM Sans, sans-serif',
+    }}>
+      {/* Logo */}
+      <div style={{ flexShrink: 0, marginRight: '0.5rem' }}>
+        <img src="https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69a9af9fb003fa7bb8bb92ee.png"
+          alt="RevCore" style={{ height: '24px', width: 'auto', filter: 'brightness(0) invert(1)', display: 'block' }} />
       </div>
 
       {/* Tab Nav */}
-      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
-        <div style={{ display: 'flex', gap: '0', maxWidth: '1200px', margin: '0 auto', overflowX: 'auto' }}>
-          {([
-            { id: 'home', label: 'Dashboard' },
-            { id: 'sales', label: 'Sales Mastery' },
-            { id: 'gmb', label: 'Integrations' },
-            { id: 'resources', label: 'Resources' },
-            { id: 'support', label: 'Support' },
-          ] as { id: Tab; label: string }[]).map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as Tab)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '1rem 1.5rem', fontSize: '0.88rem', fontWeight: 600, fontFamily: 'inherit', whiteSpace: 'nowrap', color: activeTab === tab.id ? '#FE6462' : 'rgba(255,255,255,0.4)', borderBottom: activeTab === tab.id ? '2px solid #FE6462' : '2px solid transparent', transition: 'all 0.2s', marginBottom: '-1px' }}>
-              {tab.label}
-            </button>
+      <nav style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '2px', overflowX: 'auto' }}>
+        {TABS.map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            style={{
+              background: activeTab === tab.id ? 'rgba(255,255,255,0.09)' : 'none',
+              border: '1px solid ' + (activeTab === tab.id ? 'rgba(255,255,255,0.13)' : 'transparent'),
+              borderRadius: '8px', cursor: 'pointer', padding: '6px 13px',
+              fontSize: '0.84rem', fontWeight: activeTab === tab.id ? 600 : 500,
+              fontFamily: 'inherit', whiteSpace: 'nowrap', letterSpacing: '-0.01em',
+              color: activeTab === tab.id ? '#fff' : 'rgba(255,255,255,0.42)',
+              transition: 'all 0.18s',
+            }}
+            onMouseEnter={e => { if (activeTab !== tab.id) e.currentTarget.style.color = 'rgba(255,255,255,0.72)'; }}
+            onMouseLeave={e => { if (activeTab !== tab.id) e.currentTarget.style.color = 'rgba(255,255,255,0.42)'; }}>
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* User + Logout */}
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+          Welcome, <strong style={{ color: 'rgba(255,255,255,0.72)', fontWeight: 600 }}>{name}</strong>
+        </span>
+        <button onClick={onLogout}
+          style={{
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '8px', color: 'rgba(255,255,255,0.48)', fontSize: '0.8rem',
+            padding: '5px 13px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif',
+            fontWeight: 600, transition: 'all 0.18s', whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.11)'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.48)'; }}>
+          Sign out
+        </button>
+      </div>
+    </header>
+  );
+}
+
+// ─── Onboarding Demo ──────────────────────────────────────────────────────────
+const DEMO_STEPS = [
+  {
+    emoji: '🎉',
+    subtitle: "You're officially in.",
+    title: 'Welcome to RevCore!',
+    body: "Congratulations on partnering with RevCore. You've made a great decision — and we're here to make sure every dollar you invest works harder than you'd expect.",
+  },
+  {
+    emoji: '🔒',
+    subtitle: 'Built for trades. Proven results.',
+    title: 'Your investment is in expert hands.',
+    body: "We specialize exclusively in roofing, HVAC, plumbing, and home services — campaigns built on real industry data, not guesswork. We've generated thousands of booked jobs for contractors just like you.",
+  },
+  {
+    emoji: '🗺️',
+    subtitle: 'Everything you need, all in one place.',
+    title: "Here's what's inside your portal.",
+    body: "Dashboard — your home base and launch roadmap\nSales Mastery — training to close more appointments\nIntegrations — connect your accounts to RevCore\nResources — expectations, metrics, and FAQs\nSupport — submit a ticket or book a call anytime",
+  },
+  {
+    emoji: '📋',
+    subtitle: 'Step 1 of your launch.',
+    title: 'Start with your onboarding form.',
+    body: "Before your kickoff call, complete your onboarding form. It covers your service details, starting price, target area, and media prep. This lets us build creatives specific to your business — not generic ad templates.",
+  },
+  {
+    emoji: '📞',
+    subtitle: "We're here when you need us.",
+    title: 'Get support anytime.',
+    body: "Have a question? Use the Support tab to submit a ticket or book a complimentary 30-minute call. We respond within a few hours during business hours and you get one support call per week included with your plan.",
+  },
+  {
+    emoji: '🚀',
+    subtitle: "Let's get to work.",
+    title: "You're all set.",
+    body: "Your campaign is being built. Your first step is to complete the onboarding form — then we'll schedule your kickoff call. We're excited to drive results for your business.",
+  },
+];
+
+function OnboardingDemo({ name, onDone }: { name: string; onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const [exiting, setExiting] = useState(false);
+  const total = DEMO_STEPS.length;
+  const current = DEMO_STEPS[step];
+  const isLast = step === total - 1;
+
+  const next = () => {
+    setExiting(true);
+    setTimeout(() => { setStep(s => s + 1); setExiting(false); }, 200);
+  };
+
+  const done = () => {
+    localStorage.setItem(DEMO_KEY(name), '1');
+    onDone();
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'rgba(7,11,15,0.97)', backdropFilter: 'blur(24px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '2rem', fontFamily: 'DM Sans, sans-serif',
+    }}>
+      <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(254,100,98,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
+
+      <div style={{
+        width: '100%', maxWidth: '500px',
+        opacity: exiting ? 0 : 1,
+        transform: exiting ? 'translateY(-10px)' : 'translateY(0)',
+        transition: 'opacity 0.18s ease, transform 0.18s ease',
+      }}>
+        {/* Progress pills */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', marginBottom: '2.5rem' }}>
+          {DEMO_STEPS.map((_, i) => (
+            <div key={i} style={{
+              height: '3px', borderRadius: '4px',
+              width: i === step ? '28px' : '10px',
+              background: i <= step ? '#FE6462' : 'rgba(255,255,255,0.1)',
+              transition: 'all 0.3s ease',
+            }} />
           ))}
         </div>
-      </div>
 
-      {/* Content */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(2rem, 4vw, 3rem) clamp(1.5rem, 5vw, 4rem)' }}>
-        {activeTab === 'home' && <HomeDashboard displayName={displayName} setActiveTab={setActiveTab} />}
+        {/* Card */}
+        <div style={{
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '24px', padding: 'clamp(2rem, 5vw, 3rem) clamp(1.5rem, 4vw, 2.5rem)',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '3.2rem', marginBottom: '1.25rem', lineHeight: 1 }}>{current.emoji}</div>
+          <div style={{ color: '#FE6462', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.65rem' }}>{current.subtitle}</div>
+          <h2 style={{ fontSize: 'clamp(1.4rem, 3vw, 1.9rem)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 1.1rem', lineHeight: 1.2 }}>{current.title}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.52)', fontSize: '0.92rem', lineHeight: 1.75, margin: 0, whiteSpace: 'pre-line', textAlign: 'left' }}>{current.body}</p>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', marginTop: '1.25rem' }}>
+          {isLast ? (
+            <>
+              <Link href="/onboarding"
+                style={{ display: 'block', width: '100%', textAlign: 'center', background: '#FE6462', color: '#fff', border: 'none', borderRadius: '12px', padding: '0.9rem', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'none', letterSpacing: '-0.01em', boxSizing: 'border-box' }}
+                onClick={done}>
+                Complete Onboarding Form →
+              </Link>
+              <button onClick={done} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.28)', fontSize: '0.83rem', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px' }}>
+                Skip for now
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={next}
+                style={{ width: '100%', background: '#FE6462', color: '#fff', border: 'none', borderRadius: '12px', padding: '0.9rem', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '-0.01em', transition: 'opacity 0.18s' }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+                Next →
+              </button>
+              <button onClick={done} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.22)', fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px' }}>
+                Skip intro
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+function Dashboard({ name, onLogout }: { name: string; onLogout: () => void }) {
+  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [showDemo, setShowDemo] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem(DEMO_KEY(name));
+    if (!seen) setShowDemo(true);
+  }, [name]);
+
+  const handleTabChange = (t: Tab) => {
+    if (t === activeTab) return;
+    setTransitioning(true);
+    setTimeout(() => { setActiveTab(t); setTransitioning(false); }, 140);
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#070b0f', fontFamily: 'DM Sans, sans-serif', color: '#fff' }}>
+      {showDemo && <OnboardingDemo name={name} onDone={() => setShowDemo(false)} />}
+      <PortalHeader name={name} activeTab={activeTab} setActiveTab={handleTabChange} onLogout={onLogout} />
+
+      <main style={{
+        maxWidth: '1200px', margin: '0 auto',
+        padding: `calc(${PORTAL_HEADER_H}px + clamp(2rem, 4vw, 3rem)) clamp(1.5rem, 5vw, 4rem) clamp(2rem, 4vw, 3rem)`,
+        opacity: transitioning ? 0 : 1,
+        transform: transitioning ? 'translateY(5px)' : 'translateY(0)',
+        transition: 'opacity 0.14s ease, transform 0.14s ease',
+      }}>
+        {activeTab === 'home' && <HomeDashboard displayName={name} setActiveTab={handleTabChange} />}
         {activeTab === 'sales' && <SalesMastery />}
         {activeTab === 'gmb' && <GoogleSetup />}
         {activeTab === 'resources' && <Resources />}
@@ -160,7 +349,6 @@ function Dashboard({ name, onLogout }: { name: string; onLogout: () => void }) {
       </main>
 
       <style>{`
-        @media (min-width: 600px) { .portal-email-label { display: block !important; } }
         @media (max-width: 600px) { .portal-grid-2 { grid-template-columns: 1fr !important; } }
       `}</style>
     </div>
