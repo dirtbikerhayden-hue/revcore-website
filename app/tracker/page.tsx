@@ -25,6 +25,7 @@ interface Client {
   isSplit: boolean; deposit: number; bal: number; balNote: string;
   depPaid: boolean; balPaid: boolean;
   stage: Stage; payStat: PayStat; ghlId: string; notes: string; at: string;
+  isUpsold?: boolean; origPkg?: string; origAmount?: number; upsoldAt?: string;
 }
 interface Commission {
   id: string; clientId: string; partnerId: string; role: 'setter' | 'closer';
@@ -98,6 +99,7 @@ const blankC = (): Omit<Client, 'id' | 'at'> => ({
   ongoingT: 'none', ongoingFor: 'none', ongoingV: 0,
   isSplit: false, deposit: 0, bal: 0, balNote: '', depPaid: false, balPaid: false,
   stage: 'onboarding', payStat: 'current', ghlId: '', notes: '',
+  isUpsold: false, origPkg: '', origAmount: 0, upsoldAt: '',
 });
 
 // Deterministic star field
@@ -313,6 +315,20 @@ function ClientModal({ client, partners, onSave, onClose }: { client?: Client; p
             </div>
           )}
         </div>
+
+        {section('Upsell Tracking')}
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', marginBottom: '0.75rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.88rem', fontWeight: 600 }}>
+          <input type="checkbox" checked={f.isUpsold || false} onChange={e => set('isUpsold', e.target.checked)} style={{ accentColor: '#B47AFF', width: '15px', height: '15px' }} />
+          This client was upsold to a new package
+        </label>
+        {f.isUpsold && (
+          <div style={gr}>
+            {field('Original Package', txtInp(f.origPkg || '', v => set('origPkg', v), 'e.g. 15 Appointments'))}
+            {field('Original Amount ($)', numInp(f.origAmount || 0, v => set('origAmount', v)))}
+            {field('Upsell Date', dateInp(f.upsoldAt || '', v => set('upsoldAt', v)))}
+            <div />
+          </div>
+        )}
 
         {section('Status & Notes')}
         <div style={gr}>
@@ -694,7 +710,10 @@ function OverviewTab({ data }: { data: AppData }) {
   const totalMonthly  = totalMonthlyClients.reduce((s, c) => s + monthlyVal(c), 0);
   const activeClients  = data.clients.filter(c => c.stage === 'active');
   const atRiskClients  = data.clients.filter(c => c.stage === 'at-risk');
-  const issueClients   = data.clients.filter(c => c.payStat === 'failed' || c.payStat === 'overdue');
+  const lastMonthStr   = (() => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return d.toISOString().slice(0, 7); })();
+  const lastMonthRev   = data.clients.filter(c => { const d = c.start || c.at; return d && d.slice(0, 7) <= lastMonthStr; }).reduce((s, c) => s + monthlyVal(c), 0);
+  const momGrowthPct   = lastMonthRev > 0 ? ((totalMonthly - lastMonthRev) / lastMonthRev) * 100 : null;
+  const projectedARR   = totalMonthly * 12;
 
 
   const stageCounts   = (Object.keys(STAGES) as Stage[]).map(s => ({ stage: s, count: data.clients.filter(c => c.stage === s).length, clients: data.clients.filter(c => c.stage === s) }));
@@ -706,7 +725,6 @@ function OverviewTab({ data }: { data: AppData }) {
   const newMonthRevenue  = newThisMonth.reduce((s, c) => s + monthlyVal(c), 0);
   const cashOutstanding  = data.clients.reduce((s, c) =>
     s + (!c.depPaid ? c.deposit : 0) + (!c.balPaid && c.bal > 0 ? c.bal : 0), 0);
-  const churnedClients   = data.clients.filter(c => c.stage === 'churned');
   const avgValue         = data.clients.filter(c => c.stage !== 'churned').length > 0
     ? data.clients.filter(c => c.stage !== 'churned').reduce((s, c) => s + c.amount, 0) / data.clients.filter(c => c.stage !== 'churned').length
     : 0;
@@ -732,8 +750,8 @@ function OverviewTab({ data }: { data: AppData }) {
           onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(totalMonthly)}/mo across all active clients`, content: <>{[...totalMonthlyClients].sort((a,b) => monthlyVal(b)-monthlyVal(a)).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
         <KpiCard label="Avg Client Value" value={fmtM(avgValue)} sub={`${data.clients.filter(c=>c.stage!=='churned').length} active clients`} color="#B47AFF" delay={0.12}
           onClick={() => setDrill({ title: 'All Active Clients by Value', subtitle: 'Sorted by monthly value', content: <>{[...data.clients].filter(c=>c.stage!=='churned').sort((a,b)=>monthlyVal(b)-monthlyVal(a)).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
-        <KpiCard label="Churned Clients" value={String(churnedClients.length)} sub={churnedClients.length > 0 ? `${fmtM(churnedClients.reduce((s,c)=>s+c.amount,0))} lost` : 'None churned'} color={churnedClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.18}
-          onClick={() => setDrill({ title: 'Churned Clients', subtitle: `${churnedClients.length} churned`, content: churnedClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No churned clients.</p> : <>{churnedClients.map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
+        <KpiCard label="Projected Annual Revenue" value={fmtM(projectedARR)} sub={`${fmtM(totalMonthly)}/mo × 12`} color="#F59E0B" delay={0.18}
+          onClick={() => setDrill({ title: 'Projected Annual Revenue', subtitle: `Based on current monthly revenue run rate`, content: <>{[...totalMonthlyClients].sort((a,b) => monthlyVal(b)-monthlyVal(a)).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
       </div>
 
       {/* Row 2 — Operations */}
@@ -742,8 +760,7 @@ function OverviewTab({ data }: { data: AppData }) {
           onClick={() => setDrill({ title: 'New Clients This Month', subtitle: `${newThisMonth.length} signed in ${new Date().toLocaleString('en-US',{month:'long',year:'numeric'})}`, content: newThisMonth.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No new clients this month.</p> : <>{[...newThisMonth].sort((a,b) => monthlyVal(b)-monthlyVal(a)).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
         <KpiCard label="Cash Outstanding" value={fmtM(cashOutstanding)} sub="Unpaid deposits & balances" color={cashOutstanding > 0 ? '#F59E0B' : '#94D96B'} delay={0.28}
           onClick={() => setDrill({ title: 'Cash Outstanding', subtitle: 'Clients with unpaid deposits or balances', content: <>{data.clients.filter(c=>!c.depPaid||(!c.balPaid&&c.bal>0)).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
-        <KpiCard label="Payment Issues" value={String(issueClients.length)} sub={`${data.clients.filter(c=>c.payStat==='failed').length} failed · ${data.clients.filter(c=>c.payStat==='overdue').length} overdue`} color={issueClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.34}
-          onClick={() => setDrill({ title: 'Payment Issues', subtitle: `${issueClients.length} clients with payment problems`, content: issueClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No payment issues.</p> : <>{issueClients.map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
+        <KpiCard label="MoM Revenue Growth" value={momGrowthPct === null ? '—' : `${momGrowthPct >= 0 ? '+' : ''}${momGrowthPct.toFixed(1)}%`} sub={lastMonthRev > 0 ? `${fmtM(lastMonthRev)} last mo → ${fmtM(totalMonthly)} this mo` : 'No prior month data'} color={momGrowthPct === null ? '#6B8EFE' : momGrowthPct >= 0 ? '#94D96B' : '#FE6462'} delay={0.34} />
         <KpiCard label="All Clients" value={String(data.clients.filter(c=>c.stage!=='churned').length)} sub={`${activeClients.length} active · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.40}
           onClick={() => setDrill({ title: 'All Clients', subtitle: `${data.clients.length} total across all stages`, content: <AllClientsDrill data={data} /> })} />
       </div>
@@ -799,6 +816,7 @@ function PipeCard({ c, color, partnerName, onEdit, PAY_STAT: PS }: { c: Client; 
         {c.payStat !== 'current' && <span style={badge(PS[c.payStat].color)}>{PS[c.payStat].label}</span>}
         {!c.depPaid && <span style={badge('#F59E0B')}>Dep. Pending</span>}
         {c.depPaid && !c.balPaid && c.bal > 0 && <span style={badge('#26D9B0')}>Bal. {fmtM(c.bal)}</span>}
+        {c.isUpsold && <span style={badge('#B47AFF')}>↑ Upsell</span>}
       </div>
       {(c.setterId || c.closerId) && (
         <div style={{ marginTop: '6px', fontSize: '0.68rem', color: 'rgba(255,255,255,0.28)', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
@@ -876,7 +894,7 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
           { label: 'Total MRR', value: fmtM(data.clients.filter(c => c.planT === 'recurring').reduce((s, c) => s + c.amount, 0)), color: '#94D96B' },
           { label: 'Active Clients', value: data.clients.filter(c => c.stage === 'active').length, color: '#94D96B' },
           { label: 'At Risk', value: data.clients.filter(c => c.stage === 'at-risk').length, color: '#F59E0B' },
-          { label: 'Failed Payments', value: data.clients.filter(c => c.payStat === 'failed').length, color: '#FE6462' },
+          { label: 'Upsells', value: data.clients.filter(c => c.isUpsold).length, color: '#B47AFF' },
         ].map(({ label, value, color }, i) => (
           <div key={label} style={{ ...glassCard, borderLeft: `3px solid ${color}`, padding: '1rem 1.25rem', animation: `cardReveal 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 0.06}s both` }}>
             <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginBottom: '0.3rem' }}>{label}</div>
@@ -971,6 +989,7 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
                             <span style={badge(c.balPaid ? '#94D96B' : '#F59E0B')}>{c.balPaid ? 'Bal. Paid' : 'Bal. Pending'}</span>
                           </div>
                         )}
+                        {c.isUpsold && <div style={{ marginTop: '3px' }}><span style={badge('#B47AFF')}>↑ Upsell</span></div>}
                       </td>
                       <td style={tdStyle}><div>{c.pkg || '—'}</div><div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>{c.planT === 'recurring' ? `${fmtM(c.amount)}/mo` : fmtM(c.amount)}</div></td>
                       <td style={tdStyle}><span style={badge(STAGES[c.stage].color)}>{STAGES[c.stage].label}</span></td>
@@ -1587,9 +1606,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </span>
         </div>
         {pendingCount > 0 && (
-          <div style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '100px', padding: '3px 12px', fontSize: '0.73rem', fontWeight: 700, color: '#F59E0B', backdropFilter: 'blur(8px)' }}>
+          <button onClick={() => setTab('team')} style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '100px', padding: '3px 12px', fontSize: '0.73rem', fontWeight: 700, color: '#F59E0B', backdropFilter: 'blur(8px)', cursor: 'pointer' }}>
             {pendingCount} pending
-          </div>
+          </button>
         )}
         <button onClick={onLogout} style={{ ...btn('ghost'), fontSize: '0.78rem', padding: '5px 14px', backdropFilter: 'blur(8px)' }}>Sign out</button>
       </div>
