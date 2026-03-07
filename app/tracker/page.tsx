@@ -250,7 +250,7 @@ function ClientModal({ client, partners, onSave, onClose }: { client?: Client; p
         <div style={gr}>
           {field('Plan Type', sel(f.planT, v => set('planT', v as PlanT), [['recurring', 'Recurring'], ['one-time', 'One-Time']]))}
           {field('Payment Amount ($)', numInp(f.amount, v => set('amount', v)))}
-          {field('Start Date', dateInp(f.start, v => set('start', v)))}
+          {field('Start Date *', dateInp(f.start, v => set('start', v)))}
           {f.planT === 'recurring' ? field('Renewal Date', dateInp(f.renewal, v => set('renewal', v))) : <div />}
           {field('Next Due Date', dateInp(f.nextDue, v => set('nextDue', v)))}
           {field('Payment Status', sel(f.payStat, v => set('payStat', v as PayStat), [['current', 'Current'], ['overdue', 'Overdue'], ['failed', 'Failed']]))}
@@ -323,7 +323,7 @@ function ClientModal({ client, partners, onSave, onClose }: { client?: Client; p
 
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <button onClick={onClose} style={btn('ghost')}>Cancel</button>
-          <button onClick={() => { if (!f.name.trim()) return; onSave(f, !client); }} style={btn('primary')}>{client ? 'Save Changes' : 'Add Client'}</button>
+          <button onClick={() => { if (!f.name.trim() || !f.start) return; onSave(f, !client); }} disabled={!f.name.trim() || !f.start} style={{ ...btn('primary'), opacity: (!f.name.trim() || !f.start) ? 0.4 : 1, cursor: (!f.name.trim() || !f.start) ? 'not-allowed' : 'pointer' }}>{client ? 'Save Changes' : 'Add Client'}</button>
         </div>
       </div>
     </div>
@@ -686,13 +686,12 @@ function OverviewTab({ data }: { data: AppData }) {
   // Retainer MRR: only true recurring clients that are active (exclude at-risk / paused / churned)
   const retainerClients = data.clients.filter(c => c.planT === 'recurring' && !c.pkg.toLowerCase().includes('ppa') && c.stage !== 'churned' && c.stage !== 'at-risk' && c.stage !== 'paused');
   const retainerMRR   = retainerClients.reduce((s, c) => s + c.amount, 0);
-  // 15-Appt clients: manually charged monthly — treat as recurring revenue when active
-  const apptActive    = data.clients.filter(c => c.planT === 'one-time' && c.stage === 'active');
-  const apptMonthly   = apptActive.reduce((s, c) => s + c.amount, 0);
   // PPA clients: estimated at $2,000/mo each
-  const ppaActive     = data.clients.filter(c => c.pkg.toLowerCase().includes('ppa') && c.stage !== 'churned' && c.stage !== 'at-risk');
+  const ppaActive     = data.clients.filter(c => c.pkg.toLowerCase().includes('ppa') && c.stage !== 'churned' && c.stage !== 'paused');
   const ppaMonthly    = ppaActive.length * PPA_MONTHLY;
-  const totalMonthly  = retainerMRR + apptMonthly + ppaMonthly;
+  // Total Monthly Revenue: every non-churned, non-paused client — PPA @ $2k, appt packages treated as monthly
+  const totalMonthlyClients = data.clients.filter(c => c.stage !== 'churned' && c.stage !== 'paused');
+  const totalMonthly  = totalMonthlyClients.reduce((s, c) => s + monthlyVal(c), 0);
   const activeClients  = data.clients.filter(c => c.stage === 'active');
   const atRiskClients  = data.clients.filter(c => c.stage === 'at-risk');
   const issueClients   = data.clients.filter(c => c.payStat === 'failed' || c.payStat === 'overdue');
@@ -727,26 +726,26 @@ function OverviewTab({ data }: { data: AppData }) {
 
       {/* Row 1 — Revenue */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
-        <KpiCard label="Retainer MRR" value={fmtM(retainerMRR)} sub={`${retainerClients.length} retainer${retainerClients.length !== 1 ? 's' : ''}${ppaActive.length > 0 ? ` · ${ppaActive.length} PPA ~$1.5–2.8k/mo` : ''}`} color="#94D96B" delay={0}
+        <KpiCard label="Retainer MRR" value={fmtM(retainerMRR)} sub={`${retainerClients.length} retainer${retainerClients.length !== 1 ? 's' : ''}${ppaActive.length > 0 ? ` · ${ppaActive.length} PPA @ $2k/mo` : ''}`} color="#94D96B" delay={0}
           onClick={() => setDrill({ title: 'Retainer MRR', subtitle: `${retainerClients.length} active recurring clients`, content: <>{retainerClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KpiCard label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${fmtM(retainerMRR)} retainer + ${apptActive.length} 15-appt`} color="#6B8EFE" delay={0.06}
-          onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(retainerMRR)} retainer + ${fmtM(apptMonthly)} 15-appt`, content: <>{[...retainerClients, ...apptActive].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KpiCard label="New Clients This Month" value={String(newThisMonth.length)} sub={newThisMonth.length > 0 ? `${fmtM(newMonthRevenue)} added` : 'No new clients yet'} color="#26D9B0" delay={0.12}
-          onClick={() => setDrill({ title: 'New Clients This Month', subtitle: `${newThisMonth.length} signed in ${new Date().toLocaleString('en-US',{month:'long',year:'numeric'})}`, content: newThisMonth.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No new clients this month.</p> : <>{[...newThisMonth].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KpiCard label="Avg Client Value" value={fmtM(avgValue)} sub={`${data.clients.filter(c=>c.stage!=='churned').length} active clients`} color="#B47AFF" delay={0.18}
-          onClick={() => setDrill({ title: 'All Active Clients by Value', subtitle: 'Sorted by contract value', content: <>{[...data.clients].filter(c=>c.stage!=='churned').sort((a,b)=>b.amount-a.amount).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
+        <KpiCard label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${totalMonthlyClients.length} clients · ${fmtM(retainerMRR)} retainer · ${fmtM(ppaMonthly)} PPA`} color="#6B8EFE" delay={0.06}
+          onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(totalMonthly)}/mo across all active clients`, content: <>{[...totalMonthlyClients].sort((a,b) => monthlyVal(b)-monthlyVal(a)).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
+        <KpiCard label="Avg Client Value" value={fmtM(avgValue)} sub={`${data.clients.filter(c=>c.stage!=='churned').length} active clients`} color="#B47AFF" delay={0.12}
+          onClick={() => setDrill({ title: 'All Active Clients by Value', subtitle: 'Sorted by monthly value', content: <>{[...data.clients].filter(c=>c.stage!=='churned').sort((a,b)=>monthlyVal(b)-monthlyVal(a)).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
+        <KpiCard label="Churned Clients" value={String(churnedClients.length)} sub={churnedClients.length > 0 ? `${fmtM(churnedClients.reduce((s,c)=>s+c.amount,0))} lost` : 'None churned'} color={churnedClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.18}
+          onClick={() => setDrill({ title: 'Churned Clients', subtitle: `${churnedClients.length} churned`, content: churnedClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No churned clients.</p> : <>{churnedClients.map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
       </div>
 
       {/* Row 2 — Operations */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-        <KpiCard label="Client Pipeline" value={String(data.clients.length)} sub={`${activeClients.length} active · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.22}
-          onClick={() => setDrill({ title: 'Client Pipeline', subtitle: `${data.clients.length} total clients across all stages`, content: <AllClientsDrill data={data} /> })} />
+        <KpiCard label="New Clients This Month" value={String(newThisMonth.length)} sub={newThisMonth.length > 0 ? `${fmtM(newMonthRevenue)} added · ${new Date().toLocaleString('en-US',{month:'long'})}` : `No new clients in ${new Date().toLocaleString('en-US',{month:'long'})}`} color="#26D9B0" delay={0.22}
+          onClick={() => setDrill({ title: 'New Clients This Month', subtitle: `${newThisMonth.length} signed in ${new Date().toLocaleString('en-US',{month:'long',year:'numeric'})}`, content: newThisMonth.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No new clients this month.</p> : <>{[...newThisMonth].sort((a,b) => monthlyVal(b)-monthlyVal(a)).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
         <KpiCard label="Cash Outstanding" value={fmtM(cashOutstanding)} sub="Unpaid deposits & balances" color={cashOutstanding > 0 ? '#F59E0B' : '#94D96B'} delay={0.28}
           onClick={() => setDrill({ title: 'Cash Outstanding', subtitle: 'Clients with unpaid deposits or balances', content: <>{data.clients.filter(c=>!c.depPaid||(!c.balPaid&&c.bal>0)).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
         <KpiCard label="Payment Issues" value={String(issueClients.length)} sub={`${data.clients.filter(c=>c.payStat==='failed').length} failed · ${data.clients.filter(c=>c.payStat==='overdue').length} overdue`} color={issueClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.34}
           onClick={() => setDrill({ title: 'Payment Issues', subtitle: `${issueClients.length} clients with payment problems`, content: issueClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No payment issues.</p> : <>{issueClients.map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
-        <KpiCard label="Churned Clients" value={String(churnedClients.length)} sub={churnedClients.length > 0 ? `${fmtM(churnedClients.reduce((s,c)=>s+c.amount,0))} lost MRR` : 'None churned'} color={churnedClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.40}
-          onClick={() => setDrill({ title: 'Churned Clients', subtitle: `${churnedClients.length} churned`, content: churnedClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No churned clients.</p> : <>{churnedClients.map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
+        <KpiCard label="All Clients" value={String(data.clients.filter(c=>c.stage!=='churned').length)} sub={`${activeClients.length} active · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.40}
+          onClick={() => setDrill({ title: 'All Clients', subtitle: `${data.clients.length} total across all stages`, content: <AllClientsDrill data={data} /> })} />
       </div>
 
       {/* Chart */}
