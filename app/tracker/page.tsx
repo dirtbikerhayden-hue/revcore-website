@@ -5,7 +5,7 @@ import { supabase, hasSupabase } from '@/lib/supabase';
 const PASS  = 'revcore2024';
 const STORE = 'rcTrackerV1';
 
-type Tab       = 'overview' | 'clients' | 'team' | 'payouts' | 'calendar' | 'settings';
+type Tab       = 'overview' | 'clients' | 'team' | 'calendar' | 'settings';
 type Stage     = 'onboarding' | 'balance-pending' | 'active' | 'at-risk' | 'paused' | 'churned';
 type PlanT     = 'recurring' | 'one-time';
 type InitCommT = 'pct' | 'fixed' | 'none';
@@ -511,40 +511,20 @@ function OverviewTab({ data }: { data: AppData }) {
   const atRiskClients  = data.clients.filter(c => c.stage === 'at-risk');
   const issueClients   = data.clients.filter(c => c.payStat === 'failed' || c.payStat === 'overdue');
 
-  const setterPendingComms = data.comms.filter(c => c.role === 'setter' && c.stat === 'pending');
-  const setterPaidComms    = data.comms.filter(c => c.role === 'setter' && c.stat === 'paid');
-  const closerPendingComms = data.comms.filter(c => c.role === 'closer' && c.stat === 'pending');
-  const closerPaidComms    = data.comms.filter(c => c.role === 'closer' && c.stat === 'paid');
-  const setterPending = setterPendingComms.reduce((s, c) => s + c.amount, 0);
-  const setterPaid    = setterPaidComms.reduce((s, c) => s + c.amount, 0);
-  const closerPending = closerPendingComms.reduce((s, c) => s + c.amount, 0);
-  const closerPaid    = closerPaidComms.reduce((s, c) => s + c.amount, 0);
-  const totalPending  = setterPending + closerPending;
-  const totalPaid     = setterPaid + closerPaid;
 
-  const stageCounts  = (Object.keys(STAGES) as Stage[]).map(s => ({ stage: s, count: data.clients.filter(c => c.stage === s).length, clients: data.clients.filter(c => c.stage === s) }));
-  const recentClients = [...data.clients].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 6);
+  const stageCounts   = (Object.keys(STAGES) as Stage[]).map(s => ({ stage: s, count: data.clients.filter(c => c.stage === s).length, clients: data.clients.filter(c => c.stage === s) }));
+  const recentClients = [...data.clients].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8);
   const pName = (id: string) => data.partners.find(p => p.id === id)?.name || '—';
 
-  // Commission drill helper
-  const commDrill = (comms: Commission[], role: string) => (
-    <div>
-      {comms.length === 0 ? <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>None.</p> : comms.map(cm => {
-        const client = data.clients.find(c => c.id === cm.clientId);
-        const partner = data.partners.find(p => p.id === cm.partnerId);
-        return (
-          <div key={cm.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '0.85rem 1rem', marginBottom: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.88rem' }}>{partner?.name || '—'}</div>
-              <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.38)', marginTop: '2px' }}>{client?.company || client?.name || '—'} · {cm.commT} · {role}</div>
-            </div>
-            <span style={{ fontWeight: 800, color: cm.stat === 'paid' ? '#94D96B' : '#F59E0B', fontSize: '0.95rem' }}>{fmtM(cm.amount)}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-
+  const thisMonth        = today().slice(0, 7);
+  const newThisMonth     = data.clients.filter(c => c.at?.startsWith(thisMonth));
+  const newMonthRevenue  = newThisMonth.reduce((s, c) => s + c.amount, 0);
+  const cashOutstanding  = data.clients.reduce((s, c) =>
+    s + (!c.depPaid ? c.deposit : 0) + (!c.balPaid && c.bal > 0 ? c.bal : 0), 0);
+  const churnedClients   = data.clients.filter(c => c.stage === 'churned');
+  const avgValue         = data.clients.filter(c => c.stage !== 'churned').length > 0
+    ? data.clients.filter(c => c.stage !== 'churned').reduce((s, c) => s + c.amount, 0) / data.clients.filter(c => c.stage !== 'churned').length
+    : 0;
 
   return (
     <div>
@@ -555,38 +535,38 @@ function OverviewTab({ data }: { data: AppData }) {
       )}
 
       <div style={{ marginBottom: '2rem', animation: 'cardReveal 0.4s cubic-bezier(0.16,1,0.3,1) both' }}>
-        <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 800, margin: '0 0 0.3rem', letterSpacing: '-0.03em' }}>Overview</h2>
+        <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 800, margin: '0 0 0.3rem', letterSpacing: '-0.03em' }}>Agency Overview</h2>
         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem', margin: 0 }}>Click any metric to drill in</p>
       </div>
 
-      {/* Revenue KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
-        <KpiCard label="Retainer MRR" value={fmtM(retainerMRR)} sub={`${retainerClients.length} active retainer${retainerClients.length !== 1 ? 's' : ''}${ppaActive.length > 0 ? ` · ${ppaActive.length} PPA est. $1.5–2.8k/mo` : ''}`} color="#94D96B" delay={0}
+      {/* Row 1 — Revenue */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
+        <KpiCard label="Retainer MRR" value={fmtM(retainerMRR)} sub={`${retainerClients.length} retainer${retainerClients.length !== 1 ? 's' : ''}${ppaActive.length > 0 ? ` · ${ppaActive.length} PPA ~$1.5–2.8k/mo` : ''}`} color="#94D96B" delay={0}
           onClick={() => setDrill({ title: 'Retainer MRR', subtitle: `${retainerClients.length} active recurring clients`, content: <>{retainerClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KpiCard label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${fmtM(retainerMRR)} retainer + ${apptActive.length} 15-appt client${apptActive.length !== 1 ? 's' : ''}`} color="#6B8EFE" delay={0.06}
-          onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(retainerMRR)} retainer MRR + ${fmtM(apptMonthly)} 15-appt`, content: <>{[...retainerClients, ...apptActive].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KpiCard label="Client Pipeline" value={String(data.clients.length)} sub={`${activeClients.length} active · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.12}
-          onClick={() => setDrill({ title: 'Client Pipeline', subtitle: `${data.clients.length} total clients across all stages`, content: <AllClientsDrill data={data} /> })} />
-        <KpiCard label="Payment Issues" value={String(issueClients.length)} sub={`${data.clients.filter(c=>c.payStat==='failed').length} failed · ${data.clients.filter(c=>c.payStat==='overdue').length} overdue`} color={issueClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.18}
-          onClick={() => setDrill({ title: 'Payment Issues', subtitle: `${issueClients.length} clients with payment problems`, content: issueClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No payment issues.</p> : <>{issueClients.map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
+        <KpiCard label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${fmtM(retainerMRR)} retainer + ${apptActive.length} 15-appt`} color="#6B8EFE" delay={0.06}
+          onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(retainerMRR)} retainer + ${fmtM(apptMonthly)} 15-appt`, content: <>{[...retainerClients, ...apptActive].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
+        <KpiCard label="New Clients This Month" value={String(newThisMonth.length)} sub={newThisMonth.length > 0 ? `${fmtM(newMonthRevenue)} added` : 'No new clients yet'} color="#26D9B0" delay={0.12}
+          onClick={() => setDrill({ title: 'New Clients This Month', subtitle: `${newThisMonth.length} signed in ${new Date().toLocaleString('en-US',{month:'long',year:'numeric'})}`, content: newThisMonth.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No new clients this month.</p> : <>{[...newThisMonth].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
+        <KpiCard label="Avg Client Value" value={fmtM(avgValue)} sub={`${data.clients.filter(c=>c.stage!=='churned').length} active clients`} color="#B47AFF" delay={0.18}
+          onClick={() => setDrill({ title: 'All Active Clients by Value', subtitle: 'Sorted by contract value', content: <>{[...data.clients].filter(c=>c.stage!=='churned').sort((a,b)=>b.amount-a.amount).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
       </div>
 
-      {/* Commission KPIs */}
+      {/* Row 2 — Operations */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-        <KpiCard label="Total Commissions Owed" value={fmtM(totalPending)} sub={`${data.comms.filter(c => c.stat === 'pending').length} unpaid entries`} color="#F59E0B" delay={0.22}
-          onClick={() => setDrill({ title: 'All Pending Commissions', subtitle: `${data.comms.filter(c=>c.stat==='pending').length} unpaid · ${fmtM(totalPending)} total`, content: commDrill(data.comms.filter(c=>c.stat==='pending'), 'setter/closer') })} />
-        <KpiCard label="Total Paid Out" value={fmtM(totalPaid)} sub={`${data.comms.filter(c => c.stat === 'paid').length} entries paid`} color="#94D96B" delay={0.28}
-          onClick={() => setDrill({ title: 'Paid Commissions', subtitle: `${data.comms.filter(c=>c.stat==='paid').length} paid · ${fmtM(totalPaid)} total`, content: commDrill(data.comms.filter(c=>c.stat==='paid'), 'setter/closer') })} />
-        <KpiCard label="Setter Commissions" value={fmtM(setterPending)} sub={`Paid out: ${fmtM(setterPaid)}`} color="#FE6462" delay={0.34}
-          onClick={() => setDrill({ title: 'Setter Commissions', subtitle: `${setterPendingComms.length} pending · ${fmtM(setterPending)} owed`, content: commDrill([...setterPendingComms, ...setterPaidComms], 'setter') })} />
-        <KpiCard label="Closer Commissions" value={fmtM(closerPending)} sub={`Paid out: ${fmtM(closerPaid)}`} color="#6B8EFE" delay={0.40}
-          onClick={() => setDrill({ title: 'Closer Commissions', subtitle: `${closerPendingComms.length} pending · ${fmtM(closerPending)} owed`, content: commDrill([...closerPendingComms, ...closerPaidComms], 'closer') })} />
+        <KpiCard label="Client Pipeline" value={String(data.clients.length)} sub={`${activeClients.length} active · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.22}
+          onClick={() => setDrill({ title: 'Client Pipeline', subtitle: `${data.clients.length} total clients across all stages`, content: <AllClientsDrill data={data} /> })} />
+        <KpiCard label="Cash Outstanding" value={fmtM(cashOutstanding)} sub="Unpaid deposits & balances" color={cashOutstanding > 0 ? '#F59E0B' : '#94D96B'} delay={0.28}
+          onClick={() => setDrill({ title: 'Cash Outstanding', subtitle: 'Clients with unpaid deposits or balances', content: <>{data.clients.filter(c=>!c.depPaid||(!c.balPaid&&c.bal>0)).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
+        <KpiCard label="Payment Issues" value={String(issueClients.length)} sub={`${data.clients.filter(c=>c.payStat==='failed').length} failed · ${data.clients.filter(c=>c.payStat==='overdue').length} overdue`} color={issueClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.34}
+          onClick={() => setDrill({ title: 'Payment Issues', subtitle: `${issueClients.length} clients with payment problems`, content: issueClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No payment issues.</p> : <>{issueClients.map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
+        <KpiCard label="Churned Clients" value={String(churnedClients.length)} sub={churnedClients.length > 0 ? `${fmtM(churnedClients.reduce((s,c)=>s+c.amount,0))} lost MRR` : 'None churned'} color={churnedClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.40}
+          onClick={() => setDrill({ title: 'Churned Clients', subtitle: `${churnedClients.length} churned`, content: churnedClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No churned clients.</p> : <>{churnedClients.map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
-        {/* Pipeline */}
+      {/* Pipeline breakdown + Recent Clients */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
         <div style={{ ...glassCard, animation: 'cardReveal 0.5s cubic-bezier(0.16,1,0.3,1) 0.44s both' }}>
-          <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '1.25rem', letterSpacing: '-0.01em' }}>Pipeline Breakdown <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)', fontWeight: 500 }}>· click to drill in</span></div>
+          <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '1.25rem', letterSpacing: '-0.01em' }}>Pipeline <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)', fontWeight: 500 }}>· click to drill in</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {stageCounts.map(({ stage, count, clients: stageClients }) => (
               <StageRow key={stage} stage={stage} count={count} stageClients={stageClients} totalClients={data.clients.length} partners={data.partners} comms={data.comms}
@@ -595,38 +575,24 @@ function OverviewTab({ data }: { data: AppData }) {
           </div>
         </div>
 
-        {/* Commission Role Breakdown */}
         <div style={{ ...glassCard, animation: 'cardReveal 0.5s cubic-bezier(0.16,1,0.3,1) 0.48s both' }}>
-          <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '1.25rem', letterSpacing: '-0.01em' }}>Commission Breakdown by Role <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)', fontWeight: 500 }}>· click to drill in</span></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {[
-              { label: 'Setters', pending: setterPending, paid: setterPaid, color: '#FE6462', pendingComms: setterPendingComms, paidComms: setterPaidComms },
-              { label: 'Closers', pending: closerPending, paid: closerPaid, color: '#6B8EFE', pendingComms: closerPendingComms, paidComms: closerPaidComms },
-            ].map(row => (
-              <CommRow key={row.label} {...row} commDrill={commDrill} onDrill={(title, subtitle, content) => setDrill({ title, subtitle, content })} />
-            ))}
-          </div>
+          <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '1.25rem', letterSpacing: '-0.01em' }}>Recent Clients</div>
+          {recentClients.length === 0 ? (
+            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem', textAlign: 'center', padding: '1.5rem 0' }}>No clients added yet.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>{['Client', 'Package', 'Amount', 'Stage', 'Setter', 'Closer'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {recentClients.map(c => (
+                    <RecentClientRow key={c.id} c={c} pName={pName} partners={data.partners} comms={data.comms}
+                      onDrill={(title, subtitle, content) => setDrill({ title, subtitle, content })} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Recent Clients */}
-      <div style={{ ...glassCard, animation: 'cardReveal 0.5s cubic-bezier(0.16,1,0.3,1) 0.52s both' }}>
-        <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '1.25rem', letterSpacing: '-0.01em' }}>Recent Clients</div>
-        {recentClients.length === 0 ? (
-          <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem', textAlign: 'center', padding: '1.5rem 0' }}>No clients added yet.</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['Client', 'Package', 'Amount', 'Stage', 'Setter', 'Closer'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
-              <tbody>
-                {recentClients.map(c => (
-                  <RecentClientRow key={c.id} c={c} pName={pName} partners={data.partners} comms={data.comms}
-                    onDrill={(title, subtitle, content) => setDrill({ title, subtitle, content })} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -1398,8 +1364,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview',  label: 'Overview' },
     { id: 'clients',   label: 'Clients' },
-    { id: 'team',      label: 'Team' },
-    { id: 'payouts',   label: 'Payouts' },
+    { id: 'team',      label: 'Team & Payouts' },
     { id: 'calendar',  label: 'Calendar' },
     { id: 'settings',  label: 'Settings' },
   ];
@@ -1432,7 +1397,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '1rem 1.25rem', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'inherit', whiteSpace: 'nowrap', color: tab === t.id ? '#FE6462' : 'rgba(255,255,255,0.4)', borderBottom: tab === t.id ? '2px solid #FE6462' : '2px solid transparent', transition: 'color 0.2s', marginBottom: '-1px', position: 'relative' }}>
               {t.label}
-              {t.id === 'payouts' && pendingCount > 0 && <span style={{ position: 'absolute', top: '8px', right: '6px', width: '7px', height: '7px', borderRadius: '50%', background: '#F59E0B' }} />}
+              {t.id === 'team' && pendingCount > 0 && <span style={{ position: 'absolute', top: '8px', right: '6px', width: '7px', height: '7px', borderRadius: '50%', background: '#F59E0B' }} />}
             </button>
           ))}
         </div>
@@ -1441,8 +1406,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: 'clamp(1.5rem, 3vw, 2.5rem) clamp(1.5rem, 4vw, 3rem)', position: 'relative', zIndex: 1 }}>
         {tab === 'overview'  && <OverviewTab  data={data} />}
         {tab === 'clients'   && <ClientsTab   data={data} setData={setData} partners={data.partners} />}
-        {tab === 'team'      && <TeamTab      data={data} setData={setData} />}
-        {tab === 'payouts'   && <PayoutsTab   data={data} setData={setData} partners={data.partners} />}
+        {tab === 'team'      && <><TeamTab data={data} setData={setData} /><div style={{ marginTop: '2.5rem' }}><PayoutsTab data={data} setData={setData} partners={data.partners} /></div></>}
         {tab === 'calendar'  && <CalendarTab  data={data} />}
         {tab === 'settings'  && <SettingsTab  data={data} setData={setData} />}
       </main>
