@@ -14,7 +14,7 @@ type CommFor   = 'closer' | 'setter' | 'both' | 'none';
 type CommStat  = 'pending' | 'paid';
 type PayStat   = 'current' | 'overdue' | 'failed';
 
-interface Partner { id: string; name: string; role: 'setter' | 'closer' | 'both'; }
+interface Partner { id: string; name: string; role: 'setter' | 'closer' | 'both'; active?: boolean; }
 interface Client {
   id: string; name: string; company: string; pkg: string;
   planT: PlanT; start: string; renewal: string; amount: number; nextDue: string;
@@ -388,9 +388,15 @@ function ClientDrillCard({ client, partners, comms }: { client: Client; partners
 function OverviewTab({ data }: { data: AppData }) {
   const [drill, setDrill] = useState<{ title: string; subtitle: string; content: React.ReactNode } | null>(null);
 
-  const mrr          = data.clients.filter(c => c.planT === 'recurring' && c.stage !== 'churned').reduce((s, c) => s + c.amount, 0);
-  const oneTime      = data.clients.filter(c => c.planT === 'one-time').reduce((s, c) => s + c.amount, 0);
-  const totalPortfolio = data.clients.reduce((s, c) => s + c.amount, 0);
+  // Retainer MRR: only true recurring clients that are active (exclude at-risk / paused / churned)
+  const retainerClients = data.clients.filter(c => c.planT === 'recurring' && c.stage !== 'churned' && c.stage !== 'at-risk' && c.stage !== 'paused');
+  const retainerMRR   = retainerClients.reduce((s, c) => s + c.amount, 0);
+  // 15-Appt clients: manually charged monthly — treat as recurring revenue when active
+  const apptActive    = data.clients.filter(c => c.planT === 'one-time' && c.stage === 'active');
+  const apptMonthly   = apptActive.reduce((s, c) => s + c.amount, 0);
+  const totalMonthly  = retainerMRR + apptMonthly;
+  // PPA clients (estimated $1,500–$2,800/mo profit each)
+  const ppaActive     = data.clients.filter(c => c.pkg.toLowerCase().includes('ppa') && c.stage !== 'churned' && c.stage !== 'at-risk');
   const activeClients  = data.clients.filter(c => c.stage === 'active');
   const atRiskClients  = data.clients.filter(c => c.stage === 'at-risk');
   const issueClients   = data.clients.filter(c => c.payStat === 'failed' || c.payStat === 'overdue');
@@ -460,10 +466,10 @@ function OverviewTab({ data }: { data: AppData }) {
 
       {/* Revenue KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
-        <KPI label="Monthly Recurring Revenue" value={fmtM(mrr)} sub={`${data.clients.filter(c => c.planT === 'recurring').length} recurring clients`} color="#94D96B" delay={0}
-          onClick={() => setDrill({ title: 'Monthly Recurring Revenue', subtitle: `${data.clients.filter(c => c.planT === 'recurring' && c.stage !== 'churned').length} active recurring clients`, content: <>{data.clients.filter(c => c.planT === 'recurring' && c.stage !== 'churned').sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KPI label="Total Portfolio Value" value={fmtM(totalPortfolio)} sub={`MRR + ${fmtM(oneTime)} one-time`} color="#6B8EFE" delay={0.06}
-          onClick={() => setDrill({ title: 'Total Portfolio', subtitle: `${data.clients.length} clients · ${fmtM(mrr)}/mo recurring + ${fmtM(oneTime)} one-time`, content: <>{[...data.clients].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
+        <KPI label="Retainer MRR" value={fmtM(retainerMRR)} sub={`${retainerClients.length} active retainer${retainerClients.length !== 1 ? 's' : ''}${ppaActive.length > 0 ? ` · ${ppaActive.length} PPA est. $1.5–2.8k/mo` : ''}`} color="#94D96B" delay={0}
+          onClick={() => setDrill({ title: 'Retainer MRR', subtitle: `${retainerClients.length} active recurring clients`, content: <>{retainerClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
+        <KPI label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${fmtM(retainerMRR)} retainer + ${apptActive.length} 15-appt client${apptActive.length !== 1 ? 's' : ''}`} color="#6B8EFE" delay={0.06}
+          onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(retainerMRR)} retainer MRR + ${fmtM(apptMonthly)} 15-appt`, content: <>{[...retainerClients, ...apptActive].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
         <KPI label="Active Clients" value={String(activeClients.length)} sub={`${data.clients.length} total · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.12}
           onClick={() => setDrill({ title: 'Active Clients', subtitle: `${activeClients.length} clients currently active`, content: <>{activeClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
         <KPI label="Payment Issues" value={String(issueClients.length)} sub={`${data.clients.filter(c=>c.payStat==='failed').length} failed · ${data.clients.filter(c=>c.payStat==='overdue').length} overdue`} color={issueClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.18}
@@ -609,6 +615,8 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
   const [modal, setModal] = useState<'add' | Client | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
   const [view, setView] = useState<'pipeline' | 'table'>('pipeline');
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<Stage | null>(null);
 
   const filtered = useMemo(() => data.clients.filter(c => {
     const q = search.toLowerCase();
@@ -700,8 +708,16 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
               });
               const { label, color } = STAGES[stage];
               const colValue = stageClients.reduce((s, c) => s + c.amount, 0);
+              const isDragTarget = dragOverStage === stage;
               return (
-                <div key={stage} style={{ width: '240px', flexShrink: 0 }}>
+                <div key={stage} style={{ width: '240px', flexShrink: 0 }}
+                  onDragOver={e => { e.preventDefault(); setDragOverStage(stage); }}
+                  onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverStage(null); }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    if (dragId) setData({ ...data, clients: data.clients.map(cl => cl.id === dragId ? { ...cl, stage } : cl) });
+                    setDragId(null); setDragOverStage(null);
+                  }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem', padding: '0 2px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}` }} />
@@ -710,11 +726,18 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
                     <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{stageClients.length}</span>
                   </div>
                   {colValue > 0 && <div style={{ fontSize: '0.72rem', color, fontWeight: 700, marginBottom: '0.7rem', padding: '0 2px' }}>{fmtM(colValue)}{stageClients.some(c => c.planT === 'recurring') ? '/mo' : ''}</div>}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '60px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '60px', borderRadius: '12px', border: `1.5px dashed ${isDragTarget ? color : 'transparent'}`, padding: isDragTarget ? '6px' : '0', transition: 'all 0.15s', background: isDragTarget ? `${color}0d` : 'transparent' }}>
                     {stageClients.length === 0 ? (
-                      <div style={{ border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.2rem', textAlign: 'center', color: 'rgba(255,255,255,0.18)', fontSize: '0.75rem' }}>Empty</div>
+                      <div style={{ border: `1px dashed ${isDragTarget ? color : 'rgba(255,255,255,0.08)'}`, borderRadius: '10px', padding: '1.2rem', textAlign: 'center', color: isDragTarget ? color : 'rgba(255,255,255,0.18)', fontSize: '0.75rem', transition: 'all 0.15s' }}>
+                        {isDragTarget ? 'Drop here' : 'Empty'}
+                      </div>
                     ) : stageClients.map(c => (
-                      <PipeCard key={c.id} c={c} color={color} partnerName={partnerName} onEdit={setModal} PAY_STAT={PAY_STAT} />
+                      <div key={c.id} draggable
+                        onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; setDragId(c.id); }}
+                        onDragEnd={() => { setDragId(null); setDragOverStage(null); }}
+                        style={{ opacity: dragId === c.id ? 0.4 : 1, transition: 'opacity 0.15s', cursor: 'grab' }}>
+                        <PipeCard c={c} color={color} partnerName={partnerName} onEdit={setModal} PAY_STAT={PAY_STAT} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -805,6 +828,8 @@ function TeamTab({ data, setData }: { data: AppData; setData: (d: AppData) => vo
     setData({ ...data, partners: data.partners.filter(p => p.id !== id) });
     setDelId(null);
   };
+  const terminateMember   = (id: string) => setData({ ...data, partners: data.partners.map(p => p.id === id ? { ...p, active: false } : p) });
+  const reactivateMember  = (id: string) => setData({ ...data, partners: data.partners.map(p => p.id === id ? { ...p, active: true  } : p) });
 
   const getMetrics = (partnerId: string) => {
     const myClients = data.clients.filter(c => partnerId === 'all' ? true : c.setterId === partnerId || c.closerId === partnerId);
@@ -853,24 +878,39 @@ function TeamTab({ data, setData }: { data: AppData; setData: (d: AppData) => vo
           </div>
 
           <div style={{ ...glassCard, animation: 'cardReveal 0.4s cubic-bezier(0.16,1,0.3,1) 0.1s both' }}>
-            <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem', marginBottom: '1rem' }}>Roster ({partners.length})</div>
+            <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              Roster ({partners.filter(p => p.active !== false).length} active{partners.filter(p => p.active === false).length > 0 ? ` · ${partners.filter(p => p.active === false).length} terminated` : ''})
+            </div>
             {partners.length === 0 ? (
               <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.83rem' }}>No team members yet.</div>
-            ) : partners.map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}
-                onClick={() => setSelected(selected === p.id ? 'all' : p.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: selected === p.id ? 'rgba(254,100,98,0.25)' : 'rgba(254,100,98,0.1)', border: `1px solid ${selected === p.id ? 'rgba(254,100,98,0.6)' : 'rgba(254,100,98,0.25)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 800, color: '#FE6462', transition: 'all 0.2s' }}>
-                    {p.name.charAt(0).toUpperCase()}
+            ) : partners.map(p => {
+              const isActive = p.active !== false;
+              return (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', opacity: isActive ? 1 : 0.45 }}
+                  onClick={() => setSelected(selected === p.id ? 'all' : p.id)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: selected === p.id ? 'rgba(254,100,98,0.25)' : 'rgba(254,100,98,0.1)', border: `1px solid ${selected === p.id ? 'rgba(254,100,98,0.6)' : 'rgba(254,100,98,0.25)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 800, color: '#FE6462', transition: 'all 0.2s' }}>
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, color: selected === p.id ? '#fff' : 'rgba(255,255,255,0.8)', fontSize: '0.86rem' }}>{p.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', textTransform: 'capitalize' }}>
+                        {p.role}{!isActive && <span style={{ color: '#FE6462', marginLeft: '4px' }}>· terminated</span>}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 700, color: selected === p.id ? '#fff' : 'rgba(255,255,255,0.8)', fontSize: '0.86rem' }}>{p.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', textTransform: 'capitalize' }}>{p.role}</div>
+                  <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                    {isActive
+                      ? <button onClick={() => terminateMember(p.id)} style={{ ...btn('danger'), padding: '3px 10px', fontSize: '0.68rem' }}>Terminate</button>
+                      : <>
+                          <button onClick={() => reactivateMember(p.id)} style={{ ...btn('ghost'), padding: '3px 10px', fontSize: '0.68rem' }}>Reactivate</button>
+                          <button onClick={() => setDelId(p.id)} style={{ ...btn('danger'), padding: '3px 8px', fontSize: '0.68rem' }}>×</button>
+                        </>
+                    }
                   </div>
                 </div>
-                <button onClick={e => { e.stopPropagation(); setDelId(p.id); }} style={{ ...btn('danger'), padding: '3px 8px', fontSize: '0.7rem' }}>×</button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
