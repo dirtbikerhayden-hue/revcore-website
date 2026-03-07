@@ -448,6 +448,36 @@ function RecentClientRow({ c, pName, partners, comms, onDrill }:
   );
 }
 
+/* ─── All Clients drill (stage filter tabs + cards) ─────────────────────── */
+function AllClientsDrill({ data }: { data: AppData }) {
+  const [stageF, setStageF] = useState<Stage | 'all'>('all');
+  const stages = Object.keys(STAGES) as Stage[];
+  const shown = (stageF === 'all' ? [...data.clients] : data.clients.filter(c => c.stage === stageF))
+    .sort((a, b) => b.amount - a.amount);
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '1.25rem' }}>
+        <button onClick={() => setStageF('all')} style={{ border: 'none', borderRadius: '100px', padding: '4px 14px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', background: stageF === 'all' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)', color: stageF === 'all' ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+          All ({data.clients.length})
+        </button>
+        {stages.map(s => {
+          const count = data.clients.filter(c => c.stage === s).length;
+          if (count === 0) return null;
+          return (
+            <button key={s} onClick={() => setStageF(s)} style={{ border: `1px solid ${stageF === s ? STAGES[s].color + '88' : 'transparent'}`, borderRadius: '100px', padding: '4px 14px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', background: stageF === s ? STAGES[s].color + '22' : 'rgba(255,255,255,0.06)', color: stageF === s ? STAGES[s].color : 'rgba(255,255,255,0.5)' }}>
+              {STAGES[s].label} ({count})
+            </button>
+          );
+        })}
+      </div>
+      {shown.length === 0
+        ? <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>No clients in this stage.</p>
+        : shown.map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)
+      }
+    </div>
+  );
+}
+
 /* ─── KPI card (top-level so React doesn't remount on parent re-renders) ─── */
 function KpiCard({ label, value, sub, color, delay, onClick }: { label: string; value: string; sub?: string; color: string; delay: number; onClick?: () => void }) {
   const [hov, setHov] = useState(false);
@@ -535,8 +565,8 @@ function OverviewTab({ data }: { data: AppData }) {
           onClick={() => setDrill({ title: 'Retainer MRR', subtitle: `${retainerClients.length} active recurring clients`, content: <>{retainerClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
         <KpiCard label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${fmtM(retainerMRR)} retainer + ${apptActive.length} 15-appt client${apptActive.length !== 1 ? 's' : ''}`} color="#6B8EFE" delay={0.06}
           onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(retainerMRR)} retainer MRR + ${fmtM(apptMonthly)} 15-appt`, content: <>{[...retainerClients, ...apptActive].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KpiCard label="Active Clients" value={String(activeClients.length)} sub={`${data.clients.length} total · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.12}
-          onClick={() => setDrill({ title: 'Active Clients', subtitle: `${activeClients.length} clients currently active`, content: <>{activeClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
+        <KpiCard label="Client Pipeline" value={String(data.clients.length)} sub={`${activeClients.length} active · ${atRiskClients.length} at risk`} color="#94D96B" delay={0.12}
+          onClick={() => setDrill({ title: 'Client Pipeline', subtitle: `${data.clients.length} total clients across all stages`, content: <AllClientsDrill data={data} /> })} />
         <KpiCard label="Payment Issues" value={String(issueClients.length)} sub={`${data.clients.filter(c=>c.payStat==='failed').length} failed · ${data.clients.filter(c=>c.payStat==='overdue').length} overdue`} color={issueClients.length > 0 ? '#FE6462' : '#94D96B'} delay={0.18}
           onClick={() => setDrill({ title: 'Payment Issues', subtitle: `${issueClients.length} clients with payment problems`, content: issueClients.length === 0 ? <p style={{color:'rgba(255,255,255,0.4)'}}>No payment issues.</p> : <>{issueClients.map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
       </div>
