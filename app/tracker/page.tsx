@@ -718,9 +718,6 @@ function OverviewTab({ data }: { data: AppData }) {
   // Retainer MRR: only true recurring clients that are active (exclude at-risk / paused / churned)
   const retainerClients = data.clients.filter(c => c.planT === 'recurring' && !c.pkg.toLowerCase().includes('ppa') && c.stage !== 'churned' && c.stage !== 'at-risk' && c.stage !== 'paused');
   const retainerMRR   = retainerClients.reduce((s, c) => s + c.amount, 0);
-  // PPA clients: estimated at $2,000/mo each
-  const ppaActive     = data.clients.filter(c => c.pkg.toLowerCase().includes('ppa') && c.stage !== 'churned' && c.stage !== 'paused');
-  const ppaMonthly    = ppaActive.length * PPA_MONTHLY;
   // Total Monthly Revenue: every non-churned, non-paused client — PPA @ $2k, appt packages treated as monthly
   const totalMonthlyClients = data.clients.filter(c => c.stage !== 'churned' && c.stage !== 'paused');
   const totalMonthly  = totalMonthlyClients.reduce((s, c) => s + monthlyVal(c), 0);
@@ -760,9 +757,9 @@ function OverviewTab({ data }: { data: AppData }) {
 
       {/* Row 1 — Revenue */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
-        <KpiCard label="Retainer MRR" value={fmtM(retainerMRR)} sub={`${retainerClients.length} retainer${retainerClients.length !== 1 ? 's' : ''}${ppaActive.length > 0 ? ` · ${ppaActive.length} PPA @ $2k/mo` : ''}`} color="#94D96B" delay={0}
+        <KpiCard label="Retainer MRR" value={fmtM(retainerMRR)} sub={`${retainerClients.length} retainer client${retainerClients.length !== 1 ? 's' : ''}`} color="#94D96B" delay={0}
           onClick={() => setDrill({ title: 'Retainer MRR', subtitle: `${retainerClients.length} active recurring clients`, content: <>{retainerClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
-        <KpiCard label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${totalMonthlyClients.length} clients · ${fmtM(retainerMRR)} retainer · ${fmtM(ppaMonthly)} PPA`} color="#6B8EFE" delay={0.06}
+        <KpiCard label="Total Monthly Revenue" value={fmtM(totalMonthly)} sub={`${totalMonthlyClients.length} active client${totalMonthlyClients.length !== 1 ? 's' : ''}`} color="#6B8EFE" delay={0.06}
           onClick={() => setDrill({ title: 'Total Monthly Revenue', subtitle: `${fmtM(totalMonthly)}/mo across all active clients`, content: <>{[...totalMonthlyClients].sort((a,b) => monthlyVal(b)-monthlyVal(a)).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })} />
         <KpiCard label="Avg Client Value" value={fmtM(avgValue)} sub={`${data.clients.filter(c=>c.stage!=='churned').length} active clients`} color="#B47AFF" delay={0.12}
           onClick={() => setDrill({ title: 'All Active Clients by Value', subtitle: 'Sorted by monthly value', content: <>{[...data.clients].filter(c=>c.stage!=='churned').sort((a,b)=>monthlyVal(b)-monthlyVal(a)).map(c=><ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms}/>)}</> })} />
