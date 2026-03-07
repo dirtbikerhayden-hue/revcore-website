@@ -526,42 +526,48 @@ function IntegrationBanner() {
 function SoftwareCTA() {
   const { ref, inView } = useScrollReveal({ threshold: 0.2 });
   return (
-    <section ref={ref as React.Ref<HTMLElement>} style={{ padding: '120px 0', background: '#070b0f', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-      <SpaceBackground opacity={0.55} />
-      <div className="container" style={{ maxWidth: '640px', position: 'relative', zIndex: 1 }}>
-        <div style={{ ...fadeUp(inView, 0) }}>
-          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
+    <section ref={ref as React.Ref<HTMLElement>} style={{ padding: '140px 0', background: '#070b0f', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <SpaceBackground />
+      {/* Centered nebula glow */}
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '900px', height: '500px', background: 'radial-gradient(ellipse, rgba(254,100,98,0.08) 0%, rgba(107,142,254,0.05) 45%, transparent 70%)', pointerEvents: 'none' }} />
+      <div className="container" style={{ maxWidth: '660px', position: 'relative', zIndex: 1 }}>
+        {/* Eyebrow pill */}
+        <div style={{ ...fadeUp(inView, 0), marginBottom: '1.75rem' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '5px 16px', borderRadius: '100px', background: 'rgba(254,100,98,0.08)', border: '1px solid rgba(254,100,98,0.22)', color: '#FE6462', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#FE6462', boxShadow: '0 0 8px #FE6462', animation: 'ctaDot 2s ease-in-out infinite', display: 'inline-block' }} />
             Ready to see it in action?
-          </div>
+          </span>
         </div>
         <AnimatedText
           as="h2"
           inView={inView}
           delay={150}
           stagger={70}
-          style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, color: 'white', lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: '1.25rem' }}
+          style={{ fontSize: 'clamp(2rem, 4vw, 3.2rem)', fontWeight: 800, color: 'white', lineHeight: 1.12, letterSpacing: '-0.025em', marginBottom: '1.25rem' }}
         >
           Get a live demo. Built for your trade.
         </AnimatedText>
-        <p style={{ color: 'rgba(255,255,255,0.4)', lineHeight: '1.75', marginBottom: '2.5rem', ...fadeUp(inView, 600) }}>
+        <p style={{ color: 'rgba(255,255,255,0.42)', lineHeight: '1.8', marginBottom: '3rem', ...fadeUp(inView, 600) }}>
           We&apos;ll walk you through both tools, show you how they integrate with your business, and have a custom version built for your trade before you hang up.
         </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', ...fadeUp(inView, 750) }}>
-          <Link href="/contact" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '10px',
-            background: 'white', color: '#0A0A0A',
-            padding: '14px 28px', borderRadius: '100px',
-            fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
-          }}>
-            Book a demo <ArrowRight size={16} />
-          </Link>
-          <Link href="/services" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '10px',
-            background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            padding: '14px 28px', borderRadius: '100px',
-            fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
-          }}>
+        <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap', ...fadeUp(inView, 750) }}>
+          {/* Primary CTA with pulse ring */}
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ position: 'absolute', inset: '-8px', borderRadius: '100px', border: '1px solid rgba(254,100,98,0.4)', animation: 'heroBtnPulse 2.6s ease-out infinite', pointerEvents: 'none' }} />
+            <span style={{ position: 'absolute', inset: '-8px', borderRadius: '100px', border: '1px solid rgba(254,100,98,0.2)', animation: 'heroBtnPulse 2.6s ease-out 1s infinite', pointerEvents: 'none' }} />
+            <Link href="/contact"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'linear-gradient(135deg, #FE6462 0%, #e84f4d 100%)', color: 'white', padding: '15px 30px', borderRadius: '100px', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none', boxShadow: '0 0 50px rgba(254,100,98,0.4), 0 4px 20px rgba(254,100,98,0.25)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 70px rgba(254,100,98,0.55), 0 8px 30px rgba(254,100,98,0.35)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 50px rgba(254,100,98,0.4), 0 4px 20px rgba(254,100,98,0.25)'; }}
+            >
+              Book a demo <ArrowRight size={16} />
+            </Link>
+          </div>
+          <Link href="/services"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.12)', padding: '15px 30px', borderRadius: '100px', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', backdropFilter: 'blur(10px)', transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; }}
+          >
             Full growth stack <ArrowRight size={16} />
           </Link>
         </div>
@@ -575,17 +581,17 @@ function SoftwareHero() {
   const { ref, inView } = useScrollReveal({ threshold: 0.15 });
 
   return (
-    <section ref={ref as React.Ref<HTMLElement>} style={{ paddingTop: '160px', paddingBottom: '100px', background: '#070b0f', position: 'relative', overflow: 'hidden' }}>
+    <section ref={ref as React.Ref<HTMLElement>} style={{ paddingTop: '160px', paddingBottom: '120px', background: '#070b0f', position: 'relative', overflow: 'hidden' }}>
       <SpaceBackground />
+      {/* Nebula glow beneath headline */}
+      <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)', width: '900px', height: '500px', background: 'radial-gradient(ellipse, rgba(107,142,254,0.09) 0%, rgba(148,217,107,0.05) 45%, transparent 70%)', pointerEvents: 'none' }} />
       <div className="container" style={{ textAlign: 'center', maxWidth: '1000px', position: 'relative', zIndex: 1 }}>
         <div style={{ ...fadeUp(inView, 0) }}>
-          <div style={{
-            display: 'inline-flex', gap: '8px', marginBottom: '1.5rem',
-          }}>
-            <span style={{ padding: '4px 14px', borderRadius: '100px', background: 'rgba(148,217,107,0.1)', color: '#94D96B', fontSize: '0.72rem', fontWeight: 700, border: '1px solid rgba(148,217,107,0.2)' }}>
+          <div style={{ display: 'inline-flex', gap: '8px', marginBottom: '1.75rem' }}>
+            <span style={{ padding: '4px 14px', borderRadius: '100px', background: 'rgba(148,217,107,0.1)', color: '#94D96B', fontSize: '0.72rem', fontWeight: 700, border: '1px solid rgba(148,217,107,0.25)', boxShadow: '0 0 16px rgba(148,217,107,0.12)' }}>
               Scope
             </span>
-            <span style={{ padding: '4px 14px', borderRadius: '100px', background: 'rgba(107,142,254,0.1)', color: '#6B8EFE', fontSize: '0.72rem', fontWeight: 700, border: '1px solid rgba(107,142,254,0.2)' }}>
+            <span style={{ padding: '4px 14px', borderRadius: '100px', background: 'rgba(107,142,254,0.1)', color: '#6B8EFE', fontSize: '0.72rem', fontWeight: 700, border: '1px solid rgba(107,142,254,0.25)', boxShadow: '0 0 16px rgba(107,142,254,0.12)' }}>
               Pitch
             </span>
             <span style={{ padding: '4px 14px', borderRadius: '100px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.45)', fontSize: '0.72rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -593,7 +599,7 @@ function SoftwareHero() {
             </span>
           </div>
         </div>
-        <div style={{ ...fadeUp(inView, 150), marginBottom: '1.25rem' }}>
+        <div style={{ ...fadeUp(inView, 150), marginBottom: '1.5rem' }}>
           <h1 style={{
             fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 800, lineHeight: 1.05,
             letterSpacing: '-0.03em', margin: 0, whiteSpace: 'nowrap',
@@ -605,26 +611,34 @@ function SoftwareHero() {
             Software that closes jobs.
           </h1>
         </div>
-        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1.1rem', lineHeight: '1.75', marginBottom: '2.5rem', ...fadeUp(inView, 600) }}>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '3rem', maxWidth: '680px', margin: '0 auto 3rem', ...fadeUp(inView, 600) }}>
           Scope and Pitch, two purpose-built tools that work together, from the first quote to the signed contract and the five-star review. Available separately, or bundled as RevCore Pro.
         </p>
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', ...fadeUp(inView, 750) }}>
-          <a href="#quoting" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: '#94D96B', color: '#0A0A0A',
-            padding: '13px 24px', borderRadius: '100px',
-            fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none',
-          }}>
-            Explore Scope ↓
-          </a>
-          <a href="#presentation" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: '#6B8EFE', color: 'white',
-            padding: '13px 24px', borderRadius: '100px',
-            fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none',
-          }}>
-            Explore Pitch ↓
-          </a>
+        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', ...fadeUp(inView, 750) }}>
+          {/* Scope CTA with pulse ring */}
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ position: 'absolute', inset: '-6px', borderRadius: '100px', border: '1px solid rgba(148,217,107,0.45)', animation: 'heroBtnPulse 2.5s ease-out infinite', pointerEvents: 'none' }} />
+            <span style={{ position: 'absolute', inset: '-6px', borderRadius: '100px', border: '1px solid rgba(148,217,107,0.25)', animation: 'heroBtnPulse 2.5s ease-out 1s infinite', pointerEvents: 'none' }} />
+            <a href="#quoting"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, #94D96B 0%, #6fb847 100%)', color: '#0a0a0a', padding: '14px 28px', borderRadius: '100px', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none', boxShadow: '0 0 40px rgba(148,217,107,0.35), 0 4px 16px rgba(148,217,107,0.2)', transition: 'transform 0.2s ease, box-shadow 0.2s ease', position: 'relative' }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(148,217,107,0.5), 0 8px 28px rgba(148,217,107,0.3)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(148,217,107,0.35), 0 4px 16px rgba(148,217,107,0.2)'; }}
+            >
+              Explore Scope ↓
+            </a>
+          </div>
+          {/* Pitch CTA with pulse ring */}
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ position: 'absolute', inset: '-6px', borderRadius: '100px', border: '1px solid rgba(107,142,254,0.45)', animation: 'heroBtnPulse 2.5s ease-out 0.5s infinite', pointerEvents: 'none' }} />
+            <span style={{ position: 'absolute', inset: '-6px', borderRadius: '100px', border: '1px solid rgba(107,142,254,0.25)', animation: 'heroBtnPulse 2.5s ease-out 1.5s infinite', pointerEvents: 'none' }} />
+            <a href="#presentation"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, #6B8EFE 0%, #4a6dea 100%)', color: 'white', padding: '14px 28px', borderRadius: '100px', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none', boxShadow: '0 0 40px rgba(107,142,254,0.35), 0 4px 16px rgba(107,142,254,0.2)', transition: 'transform 0.2s ease, box-shadow 0.2s ease', position: 'relative' }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(107,142,254,0.5), 0 8px 28px rgba(107,142,254,0.3)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(107,142,254,0.35), 0 4px 16px rgba(107,142,254,0.2)'; }}
+            >
+              Explore Pitch ↓
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -652,6 +666,14 @@ export default function SoftwarePage() {
         @keyframes demoPulseA {
           0%   { opacity: 0.7; transform: scale(1); }
           100% { opacity: 0; transform: scale(1.7); }
+        }
+        @keyframes heroBtnPulse {
+          0%   { opacity: 0.7; transform: scale(1); }
+          100% { opacity: 0; transform: scale(1.9); }
+        }
+        @keyframes ctaDot {
+          0%, 100% { opacity: 1; box-shadow: 0 0 6px #FE6462; }
+          50%       { opacity: 0.5; box-shadow: 0 0 14px #FE6462; }
         }
         @media (max-width: 768px) {
           div[style*="grid-template-columns: 1fr 1fr"] {

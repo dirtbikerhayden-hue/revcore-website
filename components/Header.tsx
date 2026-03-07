@@ -38,8 +38,14 @@ export default function Header() {
   const pathname = usePathname();
   const isTracker = pathname?.startsWith('/tracker');
   const isPortal  = pathname?.startsWith('/portal');
+  const isDark    = pathname?.startsWith('/software');
 
   if (isTracker || isPortal) return null;
+
+  const navColor   = isDark ? 'rgba(255,255,255,0.75)' : '#0A0A0A';
+  const bgColor    = isDark ? 'rgba(7,11,15,0.92)'     : '#ffffff';
+  const borderClr  = isDark ? 'rgba(255,255,255,0.07)' : '#f0f0f0';
+  const logoFilter = isDark ? 'brightness(0) invert(1)' : 'none';
 
   return (
     <header style={{
@@ -48,8 +54,9 @@ export default function Header() {
       left: 0,
       right: 0,
       zIndex: 1000,
-      background: '#ffffff',
-      borderBottom: '1px solid #f0f0f0',
+      background: bgColor,
+      borderBottom: `1px solid ${borderClr}`,
+      backdropFilter: isDark ? 'blur(20px)' : 'none',
     }}>
       <div style={{
         display: 'grid',
@@ -62,9 +69,9 @@ export default function Header() {
       }}>
         {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <img src="https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69a9af9fb003fa7bb8bb92ee.png" alt="RevCore" style={{ height: '32px', width: 'auto' }} />
-          <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: '1.2rem', color: '#0A0A0A' }}>
-            RevCore{isTracker && <span style={{ color: '#FE6462', marginLeft: '5px' }}>Tracker</span>}{isPortal && <span style={{ color: '#FE6462', marginLeft: '5px' }}>Client Portal</span>}
+          <img src="https://assets.cdn.filesafe.space/NYlSya2nYSkSnnXEbY2l/media/69a9af9fb003fa7bb8bb92ee.png" alt="RevCore" style={{ height: '32px', width: 'auto', filter: logoFilter }} />
+          <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: '1.2rem', color: navColor }}>
+            RevCore
           </span>
         </Link>
 
@@ -81,7 +88,7 @@ export default function Header() {
                 href={link.href}
                 style={{
                   textDecoration: 'none',
-                  color: '#0A0A0A',
+                  color: navColor,
                   fontSize: '0.9rem',
                   fontWeight: 500,
                   display: 'flex',
@@ -106,12 +113,13 @@ export default function Header() {
                   paddingTop: '14px',
                 }}>
                 <div style={{
-                  background: '#ffffff',
+                  background: isDark ? 'rgba(13,17,23,0.96)' : '#ffffff',
                   borderRadius: '12px',
                   padding: '8px',
                   minWidth: '180px',
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                  border: '1px solid #f0f0f0',
+                  boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.5)' : '0 8px 30px rgba(0,0,0,0.12)',
+                  border: `1px solid ${borderClr}`,
+                  backdropFilter: isDark ? 'blur(16px)' : 'none',
                 }}>
                   {link.children.map((child) => (
                     <Link
@@ -121,12 +129,12 @@ export default function Header() {
                         display: 'block',
                         padding: '9px 14px',
                         textDecoration: 'none',
-                        color: '#0A0A0A',
+                        color: isDark ? 'rgba(255,255,255,0.75)' : '#0A0A0A',
                         fontSize: '0.875rem',
                         borderRadius: '8px',
                         transition: 'background 0.15s',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f5f5f5')}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.07)' : '#f5f5f5')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
                       {child.label}
@@ -146,11 +154,13 @@ export default function Header() {
             className="hidden-mobile"
             style={{
               display: 'inline-flex', alignItems: 'center',
-              background: '#0A0A0A', color: 'white',
+              background: isDark ? 'rgba(255,255,255,0.1)' : '#0A0A0A',
+              color: 'white',
+              border: isDark ? '1px solid rgba(255,255,255,0.15)' : 'none',
               padding: '9px 20px', borderRadius: '100px',
               fontSize: '0.85rem', fontWeight: 700,
               textDecoration: 'none', whiteSpace: 'nowrap',
-              transition: 'opacity 0.2s',
+              transition: 'opacity 0.2s, background 0.2s',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.82')}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
@@ -159,7 +169,7 @@ export default function Header() {
           </Link>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0A0A0A', display: 'none', padding: '4px' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: navColor, display: 'none', padding: '4px' }}
             className="mobile-menu-btn"
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -168,18 +178,18 @@ export default function Header() {
       </div>
 
       {mobileOpen && (
-        <div style={{ background: '#ffffff', borderTop: '1px solid #f0f0f0', padding: '1.5rem' }}>
+        <div style={{ background: isDark ? 'rgba(7,11,15,0.97)' : '#ffffff', borderTop: `1px solid ${borderClr}`, padding: '1.5rem' }}>
           {navLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
               onClick={() => setMobileOpen(false)}
-              style={{ display: 'block', padding: '12px 0', textDecoration: 'none', color: '#0A0A0A', fontSize: '1rem', fontWeight: 500, borderBottom: '1px solid #f0f0f0' }}
+              style={{ display: 'block', padding: '12px 0', textDecoration: 'none', color: navColor, fontSize: '1rem', fontWeight: 500, borderBottom: `1px solid ${borderClr}` }}
             >
               {link.label}
             </Link>
           ))}
-          <Link href="/contact" onClick={() => setMobileOpen(false)} style={{ display: 'block', padding: '12px 0', textDecoration: 'none', color: '#0A0A0A', fontSize: '1rem', fontWeight: 700, borderBottom: '1px solid #f0f0f0' }}>
+          <Link href="/contact" onClick={() => setMobileOpen(false)} style={{ display: 'block', padding: '12px 0', textDecoration: 'none', color: navColor, fontSize: '1rem', fontWeight: 700, borderBottom: `1px solid ${borderClr}` }}>
             Book a Call
           </Link>
           <a href="mailto:hello@revcorehq.com" style={{ display: 'block', padding: '12px 0', textDecoration: 'none', color: '#6B6B6B', fontSize: '0.9rem' }}>
