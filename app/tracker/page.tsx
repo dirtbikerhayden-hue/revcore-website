@@ -576,6 +576,31 @@ function OverviewTab({ data }: { data: AppData }) {
   );
 }
 
+function PipeCard({ c, color, partnerName, onEdit, PAY_STAT: PS }: { c: Client; color: string; partnerName: (id: string) => string; onEdit: (c: Client) => void; PAY_STAT: Record<PayStat, { label: string; color: string }> }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onClick={() => onEdit(c)}
+      style={{ background: hov ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.04)', border: `1px solid ${hov ? color + '55' : 'rgba(255,255,255,0.07)'}`, borderRadius: '12px', padding: '0.85rem', cursor: 'pointer', transition: 'all 0.18s', transform: hov ? 'translateY(-2px)' : 'none', boxShadow: hov ? '0 6px 20px rgba(0,0,0,0.35)' : 'none' }}>
+      <div style={{ fontWeight: 700, fontSize: '0.83rem', color: '#fff', marginBottom: '2px', lineHeight: 1.2 }}>{c.company || c.name}</div>
+      {c.company && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginBottom: '6px' }}>{c.name}</div>}
+      <div style={{ fontSize: '0.82rem', fontWeight: 800, color, marginBottom: '6px' }}>{fmtM(c.amount)}{c.planT === 'recurring' && <span style={{ fontSize: '0.65rem', fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>/mo</span>}</div>
+      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+        {c.payStat !== 'current' && <span style={badge(PS[c.payStat].color)}>{PS[c.payStat].label}</span>}
+        {!c.depPaid && <span style={badge('#F59E0B')}>Dep. Pending</span>}
+        {c.depPaid && !c.balPaid && c.bal > 0 && <span style={badge('#26D9B0')}>Bal. {fmtM(c.bal)}</span>}
+      </div>
+      {(c.setterId || c.closerId) && (
+        <div style={{ marginTop: '6px', fontSize: '0.68rem', color: 'rgba(255,255,255,0.28)', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '6px' }}>
+          {c.setterId && <span>Set: {partnerName(c.setterId)}</span>}
+          {c.setterId && c.closerId && <span style={{ margin: '0 4px' }}>·</span>}
+          {c.closerId && <span>Close: {partnerName(c.closerId)}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Clients Tab ──────────────────────────────────────────────────────────────
 function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: AppData) => void; partners: Partner[] }) {
   const [search, setSearch] = useState('');
@@ -583,6 +608,7 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
   const [partnerF, setPartnerF] = useState('all');
   const [modal, setModal] = useState<'add' | Client | null>(null);
   const [delId, setDelId] = useState<string | null>(null);
+  const [view, setView] = useState<'pipeline' | 'table'>('pipeline');
 
   const filtered = useMemo(() => data.clients.filter(c => {
     const q = search.toLowerCase();
@@ -621,7 +647,16 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
           <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 800, margin: '0 0 0.2rem', letterSpacing: '-0.03em' }}>Clients</h2>
           <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.83rem', margin: 0 }}>{data.clients.length} closed client{data.clients.length !== 1 ? 's' : ''}</p>
         </div>
-        <button onClick={() => setModal('add')} style={btn('primary')}>+ Add Client</button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', padding: '3px' }}>
+            {(['pipeline', 'table'] as const).map(v => (
+              <button key={v} onClick={() => setView(v)} style={{ padding: '5px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, background: view === v ? 'rgba(255,255,255,0.12)' : 'transparent', color: view === v ? '#fff' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s' }}>
+                {v === 'pipeline' ? '⬛ Pipeline' : '☰ Table'}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setModal('add')} style={btn('primary')}>+ Add Client</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.85rem', marginBottom: '1.5rem' }}>
@@ -640,61 +675,100 @@ function ClientsTab({ data, setData, partners }: { data: AppData; setData: (d: A
 
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients…" style={{ ...inp, width: '220px' }} />
-        <select value={stageF} onChange={e => setStageF(e.target.value as Stage | 'all')} style={{ ...inp, width: 'auto', cursor: 'pointer' }}>
-          <option value="all">All Stages</option>
-          {(Object.keys(STAGES) as Stage[]).map(s => <option key={s} value={s}>{STAGES[s].label}</option>)}
-        </select>
+        {view === 'table' && (
+          <select value={stageF} onChange={e => setStageF(e.target.value as Stage | 'all')} style={{ ...inp, width: 'auto', cursor: 'pointer' }}>
+            <option value="all">All Stages</option>
+            {(Object.keys(STAGES) as Stage[]).map(s => <option key={s} value={s}>{STAGES[s].label}</option>)}
+          </select>
+        )}
         <select value={partnerF} onChange={e => setPartnerF(e.target.value)} style={{ ...inp, width: 'auto', cursor: 'pointer' }}>
           <option value="all">All Team Members</option>
           {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </div>
 
-      <div style={{ ...glassCard, padding: 0, overflow: 'hidden' }}>
-        {filtered.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.88rem' }}>No clients found. Add your first closed client above.</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>{['Client', 'Package', 'Stage', 'Payment', 'Next Due', 'Setter', 'Closer', 'Actions'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
-              </thead>
-              <tbody>
-                {filtered.map(c => (
-                  <tr key={c.id} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')} style={{ transition: 'background 0.15s' }}>
-                    <td style={tdStyle}>
-                      <div style={{ fontWeight: 700, color: '#fff' }}>{c.name}</div>
-                      {c.company && <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>{c.company}</div>}
-                      {c.isSplit && (
-                        <div style={{ marginTop: '3px', display: 'flex', gap: '4px' }}>
-                          <span style={badge(c.depPaid ? '#94D96B' : '#F59E0B')}>{c.depPaid ? 'Dep. Paid' : 'Dep. Pending'}</span>
-                          <span style={badge(c.balPaid ? '#94D96B' : '#F59E0B')}>{c.balPaid ? 'Bal. Paid' : 'Bal. Pending'}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td style={tdStyle}><div>{c.pkg || '—'}</div><div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>{c.planT === 'recurring' ? `${fmtM(c.amount)}/mo` : fmtM(c.amount)}</div></td>
-                    <td style={tdStyle}><span style={badge(STAGES[c.stage].color)}>{STAGES[c.stage].label}</span></td>
-                    <td style={tdStyle}>
-                      <span style={badge(PAY_STAT[c.payStat].color)}>{PAY_STAT[c.payStat].label}</span>
-                      {c.payStat !== 'current' && <button onClick={() => togglePayStatus(c, 'current')} style={{ ...btn('ghost'), padding: '2px 8px', fontSize: '0.7rem', marginLeft: '4px' }}>Mark current</button>}
-                    </td>
-                    <td style={tdStyle}>{fmtD(c.nextDue)}</td>
-                    <td style={tdStyle}>{partnerName(c.setterId)}</td>
-                    <td style={tdStyle}>{partnerName(c.closerId)}</td>
-                    <td style={tdStyle}>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button onClick={() => setModal(c)} style={{ ...btn('ghost'), padding: '4px 10px' }}>Edit</button>
-                        <button onClick={() => setDelId(c.id)} style={{ ...btn('danger'), padding: '4px 10px' }}>Del</button>
-                        {c.ghlId && <a href={`https://app.gohighlevel.com/contacts/${c.ghlId}`} target="_blank" rel="noreferrer" style={{ ...btn('ghost'), padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem' }}>GHL ↗</a>}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {view === 'pipeline' ? (
+        <div style={{ overflowX: 'auto', paddingBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', minWidth: 'max-content' }}>
+            {(Object.keys(STAGES) as Stage[]).map(stage => {
+              const stageClients = data.clients.filter(c => {
+                if (c.stage !== stage) return false;
+                const q = search.toLowerCase();
+                if (q && !c.name.toLowerCase().includes(q) && !c.company.toLowerCase().includes(q) && !c.pkg.toLowerCase().includes(q)) return false;
+                if (partnerF !== 'all' && c.setterId !== partnerF && c.closerId !== partnerF) return false;
+                return true;
+              });
+              const { label, color } = STAGES[stage];
+              const colValue = stageClients.reduce((s, c) => s + c.amount, 0);
+              return (
+                <div key={stage} style={{ width: '240px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem', padding: '0 2px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}` }} />
+                      <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)' }}>{label}</span>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{stageClients.length}</span>
+                  </div>
+                  {colValue > 0 && <div style={{ fontSize: '0.72rem', color, fontWeight: 700, marginBottom: '0.7rem', padding: '0 2px' }}>{fmtM(colValue)}{stageClients.some(c => c.planT === 'recurring') ? '/mo' : ''}</div>}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '60px' }}>
+                    {stageClients.length === 0 ? (
+                      <div style={{ border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.2rem', textAlign: 'center', color: 'rgba(255,255,255,0.18)', fontSize: '0.75rem' }}>Empty</div>
+                    ) : stageClients.map(c => (
+                      <PipeCard key={c.id} c={c} color={color} partnerName={partnerName} onEdit={setModal} PAY_STAT={PAY_STAT} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div style={{ ...glassCard, padding: 0, overflow: 'hidden' }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.88rem' }}>No clients found. Add your first closed client above.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>{['Client', 'Package', 'Stage', 'Payment', 'Next Due', 'Setter', 'Closer', 'Actions'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {filtered.map(c => (
+                    <tr key={c.id} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')} style={{ transition: 'background 0.15s' }}>
+                      <td style={tdStyle}>
+                        <div style={{ fontWeight: 700, color: '#fff' }}>{c.name}</div>
+                        {c.company && <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>{c.company}</div>}
+                        {c.isSplit && (
+                          <div style={{ marginTop: '3px', display: 'flex', gap: '4px' }}>
+                            <span style={badge(c.depPaid ? '#94D96B' : '#F59E0B')}>{c.depPaid ? 'Dep. Paid' : 'Dep. Pending'}</span>
+                            <span style={badge(c.balPaid ? '#94D96B' : '#F59E0B')}>{c.balPaid ? 'Bal. Paid' : 'Bal. Pending'}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td style={tdStyle}><div>{c.pkg || '—'}</div><div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>{c.planT === 'recurring' ? `${fmtM(c.amount)}/mo` : fmtM(c.amount)}</div></td>
+                      <td style={tdStyle}><span style={badge(STAGES[c.stage].color)}>{STAGES[c.stage].label}</span></td>
+                      <td style={tdStyle}>
+                        <span style={badge(PAY_STAT[c.payStat].color)}>{PAY_STAT[c.payStat].label}</span>
+                        {c.payStat !== 'current' && <button onClick={() => togglePayStatus(c, 'current')} style={{ ...btn('ghost'), padding: '2px 8px', fontSize: '0.7rem', marginLeft: '4px' }}>Mark current</button>}
+                      </td>
+                      <td style={tdStyle}>{fmtD(c.nextDue)}</td>
+                      <td style={tdStyle}>{partnerName(c.setterId)}</td>
+                      <td style={tdStyle}>{partnerName(c.closerId)}</td>
+                      <td style={tdStyle}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button onClick={() => setModal(c)} style={{ ...btn('ghost'), padding: '4px 10px' }}>Edit</button>
+                          <button onClick={() => setDelId(c.id)} style={{ ...btn('danger'), padding: '4px 10px' }}>Del</button>
+                          {c.ghlId && <a href={`https://app.gohighlevel.com/contacts/${c.ghlId}`} target="_blank" rel="noreferrer" style={{ ...btn('ghost'), padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem' }}>GHL ↗</a>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {delId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
