@@ -695,7 +695,7 @@ function OverviewTab({ data }: { data: AppData }) {
 
 
   const stageCounts   = (Object.keys(STAGES) as Stage[]).map(s => ({ stage: s, count: data.clients.filter(c => c.stage === s).length, clients: data.clients.filter(c => c.stage === s) }));
-  const recentClients = [...data.clients].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8);
+  const recentClients = [...data.clients].sort((a, b) => (b.start || b.at).localeCompare(a.start || a.at)).slice(0, 8);
   const pName = (id: string) => data.partners.find(p => p.id === id)?.name || '—';
 
   const thisMonth        = today().slice(0, 7);
