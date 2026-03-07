@@ -384,7 +384,71 @@ function ClientDrillCard({ client, partners, comms }: { client: Client; partners
   );
 }
 
-/* ─── KpiCardcard (top-level so React doesn't remount on parent re-renders) ─── */
+/* ─── Pipeline stage row ─────────────────────────────────────────────────── */
+function StageRow({ stage, count, stageClients, totalClients, partners, comms, onDrill }:
+  { stage: Stage; count: number; stageClients: Client[]; totalClients: number; partners: Partner[]; comms: Commission[]; onDrill: (title: string, subtitle: string, content: React.ReactNode) => void }) {
+  const [hov, setHov] = useState(false);
+  const pct = totalClients > 0 ? (count / totalClients) * 100 : 0;
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onClick={() => count > 0 && onDrill(STAGES[stage].label, `${count} client${count !== 1 ? 's' : ''} in this stage`, <>{[...stageClients].sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={partners} comms={comms} />)}</>)}
+      style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', background: hov && count > 0 ? 'rgba(255,255,255,0.05)' : 'transparent', cursor: count > 0 ? 'pointer' : 'default', transition: 'background 0.2s', marginLeft: '-0.75rem', marginRight: '-0.75rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: hov && count > 0 ? '#fff' : 'rgba(255,255,255,0.7)', transition: 'color 0.2s' }}>{STAGES[stage].label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: STAGES[stage].color }}>{count}</span>
+          {count > 0 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>↗</span>}
+        </div>
+      </div>
+      <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: STAGES[stage].color, borderRadius: '3px', transition: 'width 0.8s cubic-bezier(0.16,1,0.3,1)', boxShadow: `0 0 8px ${STAGES[stage].color}66` }} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Commission breakdown row ───────────────────────────────────────────── */
+function CommRow({ label, pending, paid, color, pendingComms, paidComms, commDrill, onDrill }:
+  { label: string; pending: number; paid: number; color: string; pendingComms: Commission[]; paidComms: Commission[]; commDrill: (comms: Commission[], role: string) => React.ReactNode; onDrill: (title: string, subtitle: string, content: React.ReactNode) => void }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onClick={() => onDrill(`${label} Commissions`, `${pendingComms.length} pending · ${fmtM(pending)} owed`, commDrill([...pendingComms, ...paidComms], label.toLowerCase().slice(0, -1)))}
+      style={{ background: hov ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${hov ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'}`, borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'all 0.2s', transform: hov ? 'translateY(-2px)' : 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <span style={{ fontWeight: 700, color, fontSize: '0.88rem' }}>{label}</span>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <span style={badge(pending > 0 ? '#F59E0B' : '#94D96B')}>{pendingComms.length} pending</span>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>↗</span>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+        <div><div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginBottom: '2px' }}>PENDING</div><div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F59E0B' }}>{fmtM(pending)}</div></div>
+        <div><div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginBottom: '2px' }}>PAID OUT</div><div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#94D96B' }}>{fmtM(paid)}</div></div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Recent client table row ─────────────────────────────────────────────── */
+function RecentClientRow({ c, pName, partners, comms, onDrill }:
+  { c: Client; pName: (id: string) => string; partners: Partner[]; comms: Commission[]; onDrill: (title: string, subtitle: string, content: React.ReactNode) => void }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <tr onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      onClick={() => onDrill(c.company || c.name, `${c.pkg || 'No package'} · ${STAGES[c.stage].label}`, <ClientDrillCard client={c} partners={partners} comms={comms} />)}
+      style={{ background: hov ? 'rgba(255,255,255,0.04)' : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }}>
+      <td style={tdStyle}><div style={{ fontWeight: 700, color: '#fff' }}>{c.name}</div>{c.company && <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.3)' }}>{c.company}</div>}</td>
+      <td style={tdStyle}>{c.pkg || '—'}</td>
+      <td style={tdStyle}><span style={{ color: '#94D96B', fontWeight: 700 }}>{fmtM(c.amount)}</span>{c.planT === 'recurring' && <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>/mo</span>}</td>
+      <td style={tdStyle}><span style={badge(STAGES[c.stage].color)}>{STAGES[c.stage].label}</span></td>
+      <td style={tdStyle}>{pName(c.setterId)}</td>
+      <td style={tdStyle}>{pName(c.closerId)}</td>
+    </tr>
+  );
+}
+
+/* ─── KPI card (top-level so React doesn't remount on parent re-renders) ─── */
 function KpiCard({ label, value, sub, color, delay, onClick }: { label: string; value: string; sub?: string; color: string; delay: number; onClick?: () => void }) {
   const [hov, setHov] = useState(false);
   return (
@@ -494,26 +558,10 @@ function OverviewTab({ data }: { data: AppData }) {
         <div style={{ ...glassCard, animation: 'cardReveal 0.5s cubic-bezier(0.16,1,0.3,1) 0.44s both' }}>
           <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '1.25rem', letterSpacing: '-0.01em' }}>Pipeline Breakdown <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)', fontWeight: 500 }}>· click to drill in</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {stageCounts.map(({ stage, count, clients: stageClients }) => {
-              const pct = data.clients.length > 0 ? (count / data.clients.length) * 100 : 0;
-              const [hov, setHov] = useState(false);
-              return (
-                <div key={stage} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-                  onClick={() => count > 0 && setDrill({ title: STAGES[stage].label, subtitle: `${count} client${count !== 1 ? 's' : ''} in this stage`, content: <>{stageClients.sort((a,b) => b.amount - a.amount).map(c => <ClientDrillCard key={c.id} client={c} partners={data.partners} comms={data.comms} />)}</> })}
-                  style={{ padding: '0.6rem 0.75rem', borderRadius: '10px', background: hov && count > 0 ? 'rgba(255,255,255,0.05)' : 'transparent', cursor: count > 0 ? 'pointer' : 'default', transition: 'background 0.2s', marginLeft: '-0.75rem', marginRight: '-0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: hov && count > 0 ? '#fff' : 'rgba(255,255,255,0.7)', transition: 'color 0.2s' }}>{STAGES[stage].label}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: STAGES[stage].color }}>{count}</span>
-                      {count > 0 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>↗</span>}
-                    </div>
-                  </div>
-                  <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: STAGES[stage].color, borderRadius: '3px', transition: 'width 0.8s cubic-bezier(0.16,1,0.3,1)', boxShadow: `0 0 8px ${STAGES[stage].color}66` }} />
-                  </div>
-                </div>
-              );
-            })}
+            {stageCounts.map(({ stage, count, clients: stageClients }) => (
+              <StageRow key={stage} stage={stage} count={count} stageClients={stageClients} totalClients={data.clients.length} partners={data.partners} comms={data.comms}
+                onDrill={(title, subtitle, content) => setDrill({ title, subtitle, content })} />
+            ))}
           </div>
         </div>
 
@@ -524,26 +572,9 @@ function OverviewTab({ data }: { data: AppData }) {
             {[
               { label: 'Setters', pending: setterPending, paid: setterPaid, color: '#FE6462', pendingComms: setterPendingComms, paidComms: setterPaidComms },
               { label: 'Closers', pending: closerPending, paid: closerPaid, color: '#6B8EFE', pendingComms: closerPendingComms, paidComms: closerPaidComms },
-            ].map(({ label, pending, paid, color, pendingComms, paidComms }) => {
-              const [hov, setHov] = useState(false);
-              return (
-                <div key={label} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-                  onClick={() => setDrill({ title: `${label} Commissions`, subtitle: `${pendingComms.length} pending · ${fmtM(pending)} owed`, content: commDrill([...pendingComms, ...paidComms], label.toLowerCase().slice(0,-1)) })}
-                  style={{ background: hov ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${hov ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'}`, borderRadius: '12px', padding: '1rem', cursor: 'pointer', transition: 'all 0.2s', transform: hov ? 'translateY(-2px)' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <span style={{ fontWeight: 700, color, fontSize: '0.88rem' }}>{label}</span>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <span style={badge(pending > 0 ? '#F59E0B' : '#94D96B')}>{pendingComms.length} pending</span>
-                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', opacity: hov ? 1 : 0, transition: 'opacity 0.2s' }}>↗</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                    <div><div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginBottom: '2px' }}>PENDING</div><div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F59E0B' }}>{fmtM(pending)}</div></div>
-                    <div><div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginBottom: '2px' }}>PAID OUT</div><div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#94D96B' }}>{fmtM(paid)}</div></div>
-                  </div>
-                </div>
-              );
-            })}
+            ].map(row => (
+              <CommRow key={row.label} {...row} commDrill={commDrill} onDrill={(title, subtitle, content) => setDrill({ title, subtitle, content })} />
+            ))}
           </div>
         </div>
       </div>
@@ -556,24 +587,12 @@ function OverviewTab({ data }: { data: AppData }) {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['Client', 'Package', 'Amount', 'Stage', 'Setter', 'Closer', 'Added'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+              <thead><tr>{['Client', 'Package', 'Amount', 'Stage', 'Setter', 'Closer'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
               <tbody>
-                {recentClients.map(c => {
-                  const [hov, setHov] = useState(false);
-                  return (
-                    <tr key={c.id} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-                      onClick={() => setDrill({ title: c.company || c.name, subtitle: `${c.pkg || 'No package'} · ${STAGES[c.stage].label}`, content: <ClientDrillCard client={c} partners={data.partners} comms={data.comms} /> })}
-                      style={{ background: hov ? 'rgba(255,255,255,0.04)' : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }}>
-                      <td style={tdStyle}><div style={{ fontWeight: 700, color: '#fff' }}>{c.name}</div>{c.company && <div style={{ fontSize: '0.73rem', color: 'rgba(255,255,255,0.3)' }}>{c.company}</div>}</td>
-                      <td style={tdStyle}>{c.pkg || '—'}</td>
-                      <td style={tdStyle}><span style={{ color: '#94D96B', fontWeight: 700 }}>{fmtM(c.amount)}</span>{c.planT === 'recurring' && <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)' }}>/mo</span>}</td>
-                      <td style={tdStyle}><span style={badge(STAGES[c.stage].color)}>{STAGES[c.stage].label}</span></td>
-                      <td style={tdStyle}>{pName(c.setterId)}</td>
-                      <td style={tdStyle}>{pName(c.closerId)}</td>
-                      <td style={tdStyle}><span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' }}>{fmtD(c.at)}</span></td>
-                    </tr>
-                  );
-                })}
+                {recentClients.map(c => (
+                  <RecentClientRow key={c.id} c={c} pName={pName} partners={data.partners} comms={data.comms}
+                    onDrill={(title, subtitle, content) => setDrill({ title, subtitle, content })} />
+                ))}
               </tbody>
             </table>
           </div>
